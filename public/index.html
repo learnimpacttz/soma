@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOMA Assessment Dashboard</title>
+<style>
+  :root {
+    --indigo: #354062; --sunglow: #FFC650; --sky: #5EA6B8;
+    --cedar: #BE6243; --offwhite: #F4F4F4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--offwhite); color: var(--indigo); }
+  header { background: var(--indigo); color: white; padding: 1.5rem 2rem; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: .25rem 0 0; opacity: .8; font-size: .9rem; }
+  main { padding: 2rem; max-width: 500px; margin: 0 auto; }
+  .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-top: 4px solid var(--cedar); }
+  .count { font-size: 2.5rem; font-weight: 700; margin: .5rem 0; }
+  .status { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .status.ok { background: #dcf5e5; color: #1a7a3f; }
+  .status.pending_first_fetch { background: #fff3cd; color: #8a6416; }
+  .status.not_configured { background: #eee; color: #777; }
+  .fetched { color: #888; font-size: .8rem; margin-top: .5rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SOMA Assessment Dashboard</h1>
+  <p>Live learning-level data</p>
+</header>
+<main>
+  <div class="card" id="card">Loading…</div>
+</main>
+<script>
+async function load() {
+  const data = await fetch('/api/data').then(r => r.json());
+  document.getElementById('card').innerHTML = `
+    <span class="status ${data.status}">${data.status.replace(/_/g,' ')}</span>
+    <div class="count">${data.total_records ?? 0}</div>
+    <div>records</div>
+    ${data.fetched_at ? `<div class="fetched">Last updated: ${new Date(data.fetched_at).toLocaleString()}</div>` : ''}
+  `;
+}
+load();
+</script>
+</body>
+</html>

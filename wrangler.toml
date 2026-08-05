@@ -1,0 +1,21 @@
+name = "soma"
+main = "src/index.js"
+compatibility_date = "2026-08-05"
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "DASHBOARD_KV"
+id = "d14888c609ac45ed8ba64b2a73538c1c"
+
+# Every 30 min. No-op until KOBO_ASSET_ID + KOBO_TOKEN are both set.
+[triggers]
+crons = ["*/30 * * * *"]
+
+# Not secrets — safe to set here directly once the real KoBo form exists.
+# Token goes in via `wrangler secret put KOBO_TOKEN`, never here.
+[vars]
+# KOBO_ASSET_ID = ""
+# KOBO_SERVER = "kf.kobotoolbox.org"
