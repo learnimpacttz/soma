@@ -78,6 +78,14 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .tbl td{padding:7px 8px;border-bottom:1px solid #f0f0f0;color:#3d4658}
 .tbl-wrap{overflow-x:auto;border-radius:0 0 8px 8px;margin:0 -16px -16px;padding:0 16px 4px}
 .foot{font-size:10px;color:#c3cadb;text-align:center;padding:10px 0 26px}
+.ins-card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(53,64,98,.10);margin-bottom:14px}
+.ins-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#5EA6B8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.ins-headline{font-size:15px;font-weight:800;color:#354062;line-height:1.4;margin-bottom:4px}
+.ins-ts{font-size:10px;color:#b7bfd0;margin-bottom:16px}
+.ins-sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#354062;margin:16px 0 8px}
+.ins-bullet{display:flex;gap:8px;margin-bottom:8px;font-size:12.5px;color:#3d4658;line-height:1.55}
+.ins-rec{background:#EDF4F6;border-left:3px solid #5EA6B8;padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;color:#354062;margin-top:6px;line-height:1.55}
+.ins-gen-btn{font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;background:#354062;color:#fff;border:none;cursor:pointer}
 #lock-overlay{position:fixed;inset:0;background:rgba(53,64,98,.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 #lock-overlay[hidden]{display:none}
 .lock-box{background:#fff;border-radius:12px;padding:24px;max-width:320px;width:100%;text-align:center}
@@ -102,8 +110,10 @@ a{color:#5EA6B8}a:hover{color:#354062}
   <div class="tab on" data-tab="overview">🏠 Overview</div>
   <div class="tab" data-tab="trends">📈 Trends</div>
   <div class="tab" data-tab="schools">🏫 Schools</div>
+  <div class="tab" data-tab="insights">🧠 Insights</div>
   <div class="tab" data-tab="programme" hidden data-team="1">📊 Programme</div>
   <div class="tab" data-tab="dq" hidden data-team="1">✅ Data Quality</div>
+  <div class="tab" data-tab="insights-team" hidden data-team="1">🧠 Team Insights</div>
   <span class="badge team" id="team-badge" style="margin-left:auto;align-self:center">🔒 Team</span>
 </div>
 
@@ -143,6 +153,17 @@ a{color:#5EA6B8}a:hover{color:#354062}
     <div class="ct">🌟 Rising Fast <span class="ct-sub">biggest gains, baseline → midline</span></div>
     <div id="rising-fast"></div>
   </div>
+</div>
+
+<!-- INSIGHTS (public) -->
+<div class="panel" data-panel="insights" hidden>
+  <div id="insights-public"></div>
+</div>
+
+<!-- INSIGHTS (team) -->
+<div class="panel" data-panel="insights-team" hidden>
+  <div class="access-line"><b>Visible to:</b> Coordinators · HQ · Leadership</div>
+  <div id="insights-team"></div>
 </div>
 
 <!-- PROGRAMME (team) -->
@@ -368,12 +389,91 @@ function renderDQ() {
     (rows || '<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">No submissions yet</td></tr>');
 }
 
+let INSIGHTS = null;
+
+function bulletsHtml(arr) {
+  return (arr || []).map(b => `<div class="ins-bullet">→ ${b}</div>`).join('');
+}
+
+function renderInsights() {
+  const pubEl = document.getElementById('insights-public');
+  const teamEl = document.getElementById('insights-team');
+
+  if (!INSIGHTS || INSIGHTS.status !== 'ok') {
+    const msg = '<div class="empty">No insights generated yet.</div>';
+    pubEl.innerHTML = msg;
+    teamEl.innerHTML = msg + `<button class="ins-gen-btn" id="gen-insights-btn" style="margin-top:10px">Generate Insights Now</button>`;
+    bindGenerateButton();
+    return;
+  }
+
+  const ts = new Date(INSIGHTS.generated_at).toLocaleString();
+  pubEl.innerHTML = `
+    <div class="ins-card">
+      <div class="ins-badge">🧠 AI Insight Briefing</div>
+      <div class="ins-headline">${INSIGHTS.public.headline}</div>
+      <div class="ins-ts">Generated ${ts} · based on ${INSIGHTS.based_on_records} records</div>
+      <div class="ins-sec">What the data shows</div>
+      ${bulletsHtml(INSIGHTS.public.what_the_data_shows)}
+      <div class="ins-rec">${INSIGHTS.public.whats_been_done}</div>
+    </div>`;
+
+  teamEl.innerHTML = `
+    <div class="ins-card">
+      <div class="ins-badge">🎯 Programme Intelligence</div>
+      <div class="ins-headline">${INSIGHTS.programme_intelligence.headline}</div>
+      ${bulletsHtml(INSIGHTS.programme_intelligence.findings)}
+      <div class="ins-rec">${INSIGHTS.programme_intelligence.recommendation}</div>
+    </div>
+    <div class="ins-card">
+      <div class="ins-badge">⚙️ Operational Intelligence</div>
+      <div class="ins-headline">${INSIGHTS.operational_intelligence.headline}</div>
+      ${bulletsHtml(INSIGHTS.operational_intelligence.findings)}
+    </div>
+    <div class="ins-ts">Generated ${ts} · based on ${INSIGHTS.based_on_records} records</div>
+    <button class="ins-gen-btn" id="gen-insights-btn">Regenerate</button>`;
+  bindGenerateButton();
+}
+
+function bindGenerateButton() {
+  const btn = document.getElementById('gen-insights-btn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    btn.textContent = 'Generating…';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/generate-insights', { method: 'POST' });
+      const result = await res.json();
+      if (result.ok) {
+        INSIGHTS = result.insights;
+        renderInsights();
+      } else {
+        btn.textContent = 'Failed — retry';
+        btn.disabled = false;
+        alert('Could not generate insights: ' + result.reason);
+      }
+    } catch (err) {
+      btn.textContent = 'Failed — retry';
+      btn.disabled = false;
+    }
+  };
+}
+
+async function loadInsights() {
+  try {
+    const res = await fetch('/api/insights');
+    INSIGHTS = await res.json();
+  } catch { INSIGHTS = null; }
+  renderInsights();
+}
+
 function renderAll() {
   renderOverview();
   renderTrends();
   renderSchools();
   renderProgramme();
   renderDQ();
+  loadInsights();
 }
 
 function switchTab(name) {
