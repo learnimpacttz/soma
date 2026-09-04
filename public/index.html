@@ -2,45 +2,451 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SOMA Assessment Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>SOMA — Kibaha Learning Progress</title>
 <style>
-  :root {
-    --indigo: #354062; --sunglow: #FFC650; --sky: #5EA6B8;
-    --cedar: #BE6243; --offwhite: #F4F4F4;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, system-ui, sans-serif; background: var(--offwhite); color: var(--indigo); }
-  header { background: var(--indigo); color: white; padding: 1.5rem 2rem; }
-  header h1 { margin: 0; font-size: 1.4rem; }
-  header p { margin: .25rem 0 0; opacity: .8; font-size: .9rem; }
-  main { padding: 2rem; max-width: 500px; margin: 0 auto; }
-  .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.08); border-top: 4px solid var(--cedar); }
-  .count { font-size: 2.5rem; font-weight: 700; margin: .5rem 0; }
-  .status { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
-  .status.ok { background: #dcf5e5; color: #1a7a3f; }
-  .status.pending_first_fetch { background: #fff3cd; color: #8a6416; }
-  .status.not_configured { background: #eee; color: #777; }
-  .fetched { color: #888; font-size: .8rem; margin-top: .5rem; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F4F4;color:#354062;min-height:100vh}
+a{color:#5EA6B8}a:hover{color:#354062}
+.hdr{background:#354062;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;-webkit-user-select:none;user-select:none}
+.hdr-t{font-size:16px;font-weight:800;letter-spacing:.3px}
+.hdr-s{font-size:10px;opacity:.65;margin-top:2px}
+.badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.badge.live{background:#5EA6B8;color:#fff}
+.badge.team{background:#BE6243;color:#fff;cursor:pointer}
+.tabs{background:#2a3350;display:flex;overflow-x:auto;position:sticky;top:0;z-index:5}
+.tab{flex-shrink:0;padding:12px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,.5);border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:5px}
+.tab.on{color:#FFC650;border-bottom-color:#FFC650}
+.tab[hidden]{display:none}
+.panel{max-width:600px;margin:0 auto;padding:14px}
+.panel[hidden]{display:none}
+.kg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:480px){.kg{grid-template-columns:repeat(4,1fr)}}
+.kc{background:#fff;border-radius:10px;padding:13px 12px;box-shadow:0 1px 4px rgba(53,64,98,.10)}
+.kl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#94a0b8}
+.kv{font-size:25px;font-weight:800;color:#354062;line-height:1.1;margin:3px 0 2px}
+.ks{font-size:10px;color:#b7bfd0}
+.card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(53,64,98,.10);margin-bottom:14px}
+.ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#354062;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.ct-sub{font-weight:400;text-transform:none;font-size:10px;color:#b7bfd0}
+.gpills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.gpill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:14px;background:#eef1f6;color:#7c869c;cursor:pointer;border:none}
+.gpill.on{background:#354062;color:#fff}
+.subj-label{font-size:11px;font-weight:700;color:#5a6478;margin-bottom:6px;margin-top:14px}
+.subj-label:first-child{margin-top:0}
+.stackbar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-bottom:8px;background:#eef1f6}
+.seg{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.lgi{display:flex;align-items:center;gap:5px;font-size:10px;color:#5a6478}
+.dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.skill-tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:4px}
+.skill-tbl th{text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;color:#9aa4b8;font-weight:700;padding:0 0 7px;border-bottom:1px solid #eef1f6}
+.skill-tbl th.num{text-align:right}
+.skill-tbl td{padding:8px 0;border-bottom:1px solid #f5f6f9;color:#3d4658}
+.skill-tbl td.num{text-align:right;font-weight:700;color:#354062}
+.skill-tbl tr:last-child td{border-bottom:none}
+.skill-name{display:flex;align-items:center;gap:7px}
+.school-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.school-row:last-child{border-bottom:none}
+.school-name{font-size:12px;font-weight:700;color:#354062;flex:1;min-width:0}
+.school-ward{font-size:9px;color:#b7bfd0;font-weight:400}
+.mini-bar{width:80px;height:8px;border-radius:4px;overflow:hidden;display:flex;flex-shrink:0;background:#eef1f6}
+.trend-row{display:flex;align-items:flex-end;gap:14px;height:120px;padding:0 4px}
+.trend-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.trend-bar{width:100%;max-width:34px;border-radius:5px 5px 0 0;background:#eef1f6;min-height:2px}
+.trend-lbl{font-size:9px;color:#b7bfd0;font-weight:600}
+.trend-val{font-size:10px;color:#354062;font-weight:700}
+.rise-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f5f6f9}
+.rise-item:last-child{border-bottom:none}
+.rise-rank{width:26px;height:26px;border-radius:50%;background:#354062;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.rise-rank.gold{background:#FFC650;color:#354062}
+.rise-gain{margin-left:auto;text-align:right}
+.rise-gain-v{font-size:15px;font-weight:800;color:#2d6a7d}
+.rise-gain-l{font-size:9px;color:#b7bfd0}
+.empty{font-size:12px;color:#9aa4b8;text-align:center;padding:20px 8px}
+.access-line{font-size:11px;color:#9aa4b8;margin-bottom:16px;padding-left:2px}
+.access-line b{color:#5a6478;font-weight:600}
+.flag-item{border-left:3px solid #BE6243;background:#FBEFEC;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:8px}
+.flag-item.med{border-left-color:#FFC650;background:#FFF9EE}
+.flag-item:last-child{margin-bottom:0}
+.flag-sev{display:inline-block;font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;background:#BE6243;color:#fff;margin-bottom:5px;text-transform:uppercase}
+.flag-item.med .flag-sev{background:#FFC650;color:#354062}
+.flag-msg{font-size:11.5px;color:#8a3f2b;line-height:1.45}
+.flag-item.med .flag-msg{color:#8a6d1f}
+.tbl{width:100%;border-collapse:collapse;font-size:10.5px}
+.tbl th{background:#354062;color:#fff;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
+.tbl td{padding:7px 8px;border-bottom:1px solid #f0f0f0;color:#3d4658}
+.tbl-wrap{overflow-x:auto;border-radius:0 0 8px 8px;margin:0 -16px -16px;padding:0 16px 4px}
+.foot{font-size:10px;color:#c3cadb;text-align:center;padding:10px 0 26px}
+#lock-overlay{position:fixed;inset:0;background:rgba(53,64,98,.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+#lock-overlay[hidden]{display:none}
+.lock-box{background:#fff;border-radius:12px;padding:24px;max-width:320px;width:100%;text-align:center}
+.lock-box h3{font-size:15px;margin-bottom:6px;color:#354062}
+.lock-box p{font-size:11px;color:#9aa4b8;margin-bottom:14px}
+.lock-box input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center;margin-bottom:10px}
+.lock-box button{width:100%;padding:10px;border:none;border-radius:8px;background:#354062;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.lock-err{font-size:11px;color:#BE6243;margin-top:8px;min-height:14px}
 </style>
 </head>
 <body>
-<header>
-  <h1>SOMA Assessment Dashboard</h1>
-  <p>Live learning-level data</p>
-</header>
-<main>
-  <div class="card" id="card">Loading…</div>
-</main>
+
+<div class="hdr" id="hdr-tap-zone">
+  <div>
+    <div class="hdr-t">SOMA</div>
+    <div class="hdr-s">Kibaha Learning Progress</div>
+  </div>
+  <span class="badge live" id="status-badge">LOADING…</span>
+</div>
+
+<div class="tabs" id="tabbar">
+  <div class="tab on" data-tab="overview">🏠 Overview</div>
+  <div class="tab" data-tab="trends">📈 Trends</div>
+  <div class="tab" data-tab="schools">🏫 Schools</div>
+  <div class="tab" data-tab="programme" hidden data-team="1">📊 Programme</div>
+  <div class="tab" data-tab="dq" hidden data-team="1">✅ Data Quality</div>
+  <span class="badge team" id="team-badge" style="margin-left:auto;align-self:center">🔒 Team</span>
+</div>
+
+<!-- OVERVIEW -->
+<div class="panel on" data-panel="overview">
+  <div class="kg" id="ov-kpis"></div>
+  <div class="card">
+    <div class="ct">Where Kibaha Stands <span class="ct-sub" id="ov-round-lbl"></span></div>
+    <div id="ov-stackbars"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Skill Breakdown <span class="ct-sub">by grade</span></div>
+    <div class="gpills" id="grade-pills"></div>
+    <div id="skill-breakdown"></div>
+  </div>
+</div>
+
+<!-- TRENDS -->
+<div class="panel" data-panel="trends" hidden>
+  <div class="card">
+    <div class="ct">Reading — % at Aya+ <span class="ct-sub">baseline → midline → endline</span></div>
+    <div class="trend-row" id="trend-reading"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Arithmetic — % at Kutoa+ <span class="ct-sub">baseline → midline → endline</span></div>
+    <div class="trend-row" id="trend-arith"></div>
+  </div>
+</div>
+
+<!-- SCHOOLS -->
+<div class="panel" data-panel="schools" hidden>
+  <div class="card">
+    <div class="ct">How Schools Compare <span class="ct-sub" id="sc-round-lbl"></span></div>
+    <div id="school-compare"></div>
+  </div>
+  <div class="card">
+    <div class="ct">🌟 Rising Fast <span class="ct-sub">biggest gains, baseline → midline</span></div>
+    <div id="rising-fast"></div>
+  </div>
+</div>
+
+<!-- PROGRAMME (team) -->
+<div class="panel" data-panel="programme" hidden>
+  <div class="access-line"><b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only</div>
+  <div class="card">
+    <div class="ct">Assessment Rounds</div>
+    <div class="trend-row" id="round-progress"></div>
+  </div>
+  <div class="card">
+    <div class="ct">School × Grade Detail</div>
+    <div class="tbl-wrap"><table class="tbl" id="school-grade-tbl"></table></div>
+  </div>
+</div>
+
+<!-- DATA QUALITY (team) -->
+<div class="panel" data-panel="dq" hidden>
+  <div class="card">
+    <div class="ct">Flags Needing Attention</div>
+    <div id="dq-flags"></div>
+  </div>
+  <div class="card">
+    <div class="ct">Submissions by Enumerator</div>
+    <div class="tbl-wrap"><table class="tbl" id="enumerator-tbl"></table></div>
+  </div>
+</div>
+
+<div class="foot">LearnImpact · SOMA Programme · Kibaha District &amp; Municipal Councils</div>
+
+<div id="lock-overlay" hidden>
+  <div class="lock-box">
+    <h3>🔒 Team Access</h3>
+    <p>Enter the team passphrase to view internal programme data.</p>
+    <input type="password" id="lock-input" placeholder="Passphrase" inputmode="text">
+    <button id="lock-submit">Unlock</button>
+    <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
+
 <script>
-async function load() {
-  const data = await fetch('/api/data').then(r => r.json());
-  document.getElementById('card').innerHTML = `
-    <span class="status ${data.status}">${data.status.replace(/_/g,' ')}</span>
-    <div class="count">${data.total_records ?? 0}</div>
-    <div>records</div>
-    ${data.fetched_at ? `<div class="fetched">Last updated: ${new Date(data.fetched_at).toLocaleString()}</div>` : ''}
+const READING_LABELS = ['Mwanzo','Silabi','Maneno','Aya'];
+const ARITH_LABELS = ['Mwanzo','Namba','Kujumlisha','Kutoa'];
+const LEVEL_COLORS = ['#D8E6EA','#5EA6B8','#3d7a8a','#354062'];
+const ROUNDS = ['baseline','midline','endline'];
+const ROUND_LABELS = { baseline:'Baseline', midline:'Midline', endline:'Endline' };
+
+// Not real security — a light gate matching the stakeholders-survey
+// pattern, meant to keep casual visitors out of internal views, not to
+// withstand a determined attacker. Change before wider rollout.
+const TEAM_PASSPHRASE = 'soma-kibaha-2026';
+
+let DATA = null;
+let currentGrade = null;
+let currentRound = 'baseline';
+
+function pct(count, n) { return n > 0 ? Math.round((count / n) * 100) : 0; }
+
+function bestAvailableRound(overall) {
+  for (const r of ['endline','midline','baseline']) {
+    if (overall[r] && overall[r].n > 0) return r;
+  }
+  return 'baseline';
+}
+
+function stackbarHtml(counts, labels, n) {
+  if (!n) return '<div class="empty">No data yet for this round.</div>';
+  let bars = '<div class="stackbar">';
+  counts.forEach((c, i) => {
+    const p = pct(c, n);
+    if (p > 0) bars += `<div class="seg" style="width:${p}%;background:${LEVEL_COLORS[i]}${i===0?';color:#354062':''}">${p}%</div>`;
+  });
+  bars += '</div>';
+  let legend = '<div class="legend">' + labels.map((l,i) =>
+    `<div class="lgi"><span class="dot" style="background:${LEVEL_COLORS[i]}"></span>${l}</div>`).join('') + '</div>';
+  return bars + legend;
+}
+
+function renderOverview() {
+  const overall = DATA.overall;
+  const round = bestAvailableRound(overall);
+  const baseline = overall.baseline;
+  const current = overall[round];
+
+  document.getElementById('ov-kpis').innerHTML = `
+    <div class="kc"><div class="kl">Students Assessed</div><div class="kv">${current.n}</div><div class="ks">${ROUND_LABELS[round]}</div></div>
+    <div class="kc"><div class="kl">Schools Reporting</div><div class="kv">${Object.keys(DATA.schools).length}</div><div class="ks">of 10 schools</div></div>
+    <div class="kc"><div class="kl">Reading at Aya+</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round!=='baseline' ? 'vs '+pct(baseline.reading[3],baseline.n)+'% baseline' : 'baseline'}</div></div>
+    <div class="kc"><div class="kl">Arithmetic at Kutoa+</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round!=='baseline' ? 'vs '+pct(baseline.arithmetic[3],baseline.n)+'% baseline' : 'baseline'}</div></div>
   `;
+  document.getElementById('ov-round-lbl').textContent = ROUND_LABELS[round];
+  document.getElementById('ov-stackbars').innerHTML =
+    '<div class="subj-label">Reading</div>' + stackbarHtml(current.reading, READING_LABELS, current.n) +
+    '<div class="subj-label">Arithmetic</div>' + stackbarHtml(current.arithmetic, ARITH_LABELS, current.n);
+
+  renderGradePills();
+  renderSkillBreakdown();
+}
+
+function renderGradePills() {
+  const grades = Object.keys(DATA.by_grade).filter(g => g !== 'unknown').sort();
+  if (!currentGrade || !grades.includes(currentGrade)) currentGrade = grades[0] || null;
+  document.getElementById('grade-pills').innerHTML = grades.map(g =>
+    `<button class="gpill ${g===currentGrade?'on':''}" data-grade="${g}">Darasa ${g}</button>`
+  ).join('') || '<div class="empty">No grade data yet.</div>';
+  document.querySelectorAll('.gpill').forEach(btn => {
+    btn.onclick = () => { currentGrade = btn.dataset.grade; renderGradePills(); renderSkillBreakdown(); };
+  });
+}
+
+function skillRow(label, base, now, colorIdx) {
+  if (base == null || now == null) return '';
+  const delta = now - base;
+  const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
+  const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : '';
+  return `<tr><td><div class="skill-name"><span class="dot" style="background:${LEVEL_COLORS[colorIdx]}"></span>${label}</div></td>
+    <td class="num">${base}%</td><td class="num">${now}%</td>
+    <td class="num"><span style="font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:8px;background:${cls==='up'?'#EDF4F6':cls==='down'?'#F4F0EC':'#f4f4f4'};color:${cls==='up'?'#2d6a7d':'#8a8478'}">${arrow} ${Math.abs(delta)}</span></td></tr>`;
+}
+
+function renderSkillBreakdown() {
+  const el = document.getElementById('skill-breakdown');
+  const g = DATA.by_grade[currentGrade];
+  if (!g || !g.baseline.n) { el.innerHTML = '<div class="empty">Not enough data yet for this grade.</div>'; return; }
+  const round = bestAvailableRound(g);
+  const base = g.baseline, now = g[round];
+  let html = `<div class="subj-label">Reading</div><table class="skill-tbl"><tr><th>Skill</th><th class="num">Baseline</th><th class="num">${ROUND_LABELS[round]}</th><th class="num">Change</th></tr>`;
+  READING_LABELS.forEach((lbl, i) => { html += skillRow(lbl, pct(base.reading[i], base.n), pct(now.reading[i], now.n), i); });
+  html += '</table><div class="subj-label">Arithmetic</div><table class="skill-tbl"><tr><th>Skill</th><th class="num">Baseline</th><th class="num">'+ROUND_LABELS[round]+'</th><th class="num">Change</th></tr>';
+  ARITH_LABELS.forEach((lbl, i) => { html += skillRow(lbl, pct(base.arithmetic[i], base.n), pct(now.arithmetic[i], now.n), i); });
+  html += '</table>';
+  el.innerHTML = html;
+}
+
+function renderTrends() {
+  const overall = DATA.overall;
+  const maxH = 90;
+  function bars(field, idx) {
+    const vals = ROUNDS.map(r => overall[r].n ? pct(overall[r][field][3], overall[r].n) : null);
+    const max = Math.max(...vals.filter(v => v != null), 1);
+    return ROUNDS.map((r, i) => {
+      const v = vals[i];
+      const h = v == null ? 4 : Math.max(4, (v / max) * maxH);
+      return `<div class="trend-bar-wrap"><div class="trend-val">${v==null?'—':v+'%'}</div>
+        <div class="trend-bar" style="height:${h}px;background:${v==null?'#e8ecf3':'#5EA6B8'}"></div>
+        <div class="trend-lbl">${ROUND_LABELS[r]}</div></div>`;
+    }).join('');
+  }
+  document.getElementById('trend-reading').innerHTML = bars('reading');
+  document.getElementById('trend-arith').innerHTML = bars('arithmetic');
+}
+
+function renderSchools() {
+  const round = bestAvailableRound(DATA.overall);
+  document.getElementById('sc-round-lbl').textContent = `% at Aya+ (reading), ${ROUND_LABELS[round]}`;
+  const rows = Object.entries(DATA.schools).map(([id, s]) => {
+    let n = 0, correct = 0;
+    Object.values(s.grades).forEach(g => { if (g[round]) { n += g[round].n; correct += g[round].reading[3]; } });
+    return { id, name: s.name, ward: s.ward, pct: pct(correct, n), n };
+  }).filter(s => s.n > 0).sort((a, b) => b.pct - a.pct);
+
+  document.getElementById('school-compare').innerHTML = rows.length ? rows.map(s => `
+    <div class="school-row">
+      <div class="school-name">${s.name}<div class="school-ward">${s.ward || ''}</div></div>
+      <div class="mini-bar"><div style="width:${s.pct}%;background:#354062"></div></div>
+      <div style="font-size:12px;font-weight:800;color:#354062;width:34px;text-align:right">${s.pct}%</div>
+    </div>`).join('') : '<div class="empty">No school data yet.</div>';
+
+  // Rising Fast — biggest baseline -> midline gain per school
+  const gains = Object.entries(DATA.schools).map(([id, s]) => {
+    let bn=0,bc=0,mn=0,mc=0;
+    Object.values(s.grades).forEach(g => {
+      if (g.baseline){bn+=g.baseline.n;bc+=g.baseline.reading[3];}
+      if (g.midline){mn+=g.midline.n;mc+=g.midline.reading[3];}
+    });
+    if (!bn || !mn) return null;
+    return { name: s.name, ward: s.ward, gain: pct(mc,mn) - pct(bc,bn) };
+  }).filter(Boolean).sort((a,b) => b.gain - a.gain).slice(0,3);
+
+  document.getElementById('rising-fast').innerHTML = gains.length ? gains.map((s,i) => `
+    <div class="rise-item">
+      <div class="rise-rank ${i===0?'gold':''}">${i+1}</div>
+      <div style="flex:1"><div style="font-size:12.5px;font-weight:700;color:#354062">${s.name}<span style="font-size:9.5px;color:#b7bfd0;font-weight:400"> · ${s.ward||''}</span></div></div>
+      <div class="rise-gain"><div class="rise-gain-v">${s.gain>=0?'+':''}${s.gain}</div><div class="rise-gain-l">points</div></div>
+    </div>`).join('') : '<div class="empty">Needs both a baseline and a midline round to show gains.</div>';
+}
+
+function renderProgramme() {
+  const overall = DATA.overall;
+  const target = Math.max(1, ...ROUNDS.map(r => overall[r].n)); // rough scale until real targets are wired in
+  document.getElementById('round-progress').innerHTML = ROUNDS.map(r => {
+    const n = overall[r].n;
+    const h = Math.max(4, (n / target) * 90);
+    return `<div class="trend-bar-wrap"><div class="trend-val">${n}</div>
+      <div class="trend-bar" style="height:${h}px;background:${n?'#354062':'#e8ecf3'}"></div>
+      <div class="trend-lbl">${ROUND_LABELS[r]}</div></div>`;
+  }).join('');
+
+  const rows = [];
+  Object.entries(DATA.schools).forEach(([id, s]) => {
+    Object.entries(s.grades).forEach(([g, rs]) => {
+      const round = bestAvailableRound(rs);
+      if (!rs[round].n) return;
+      rows.push(`<tr><td>${s.name}</td><td>Darasa ${g}</td><td>${rs[round].n}</td><td>${pct(rs[round].reading[3],rs[round].n)}%</td><td>${pct(rs[round].arithmetic[3],rs[round].n)}%</td></tr>`);
+    });
+  });
+  document.getElementById('school-grade-tbl').innerHTML =
+    '<tr><th>School</th><th>Grade</th><th>Tested</th><th>Aya+</th><th>Kutoa+</th></tr>' +
+    (rows.join('') || '<tr><td colspan="5" style="text-align:center;color:#9aa4b8;padding:14px">No data yet</td></tr>');
+}
+
+function renderDQ() {
+  const flags = DATA.dq.flags;
+  document.getElementById('dq-flags').innerHTML = flags.length ? flags.map(f => `
+    <div class="flag-item ${f.severity==='med'?'med':''}">
+      <span class="flag-sev">${f.severity}</span>
+      <div class="flag-msg">${f.message}</div>
+    </div>`).join('') : '<div class="empty">No flags — data quality looks clean.</div>';
+
+  const rows = Object.entries(DATA.dq.enumerator_totals).sort((a,b) => b[1]-a[1])
+    .map(([name, n]) => `<tr><td>${name}</td><td>${n}</td></tr>`).join('');
+  document.getElementById('enumerator-tbl').innerHTML =
+    '<tr><th>Enumerator</th><th>Submissions</th></tr>' +
+    (rows || '<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">No submissions yet</td></tr>');
+}
+
+function renderAll() {
+  renderOverview();
+  renderTrends();
+  renderSchools();
+  renderProgramme();
+  renderDQ();
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.hidden = p.dataset.panel !== name);
+}
+document.querySelectorAll('.tab[data-tab]').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+
+// --- Team access gate (light, client-side — see TEAM_PASSPHRASE note above) ---
+const TEAM_KEY = 'soma_team_unlocked';
+function setTeamUnlocked(v) {
+  if (v) sessionStorage.setItem(TEAM_KEY, '1'); else sessionStorage.removeItem(TEAM_KEY);
+  document.querySelectorAll('[data-team]').forEach(el => el.hidden = !v);
+  document.getElementById('team-badge').textContent = v ? '🔓 Team' : '🔒 Team';
+}
+function isTeamUnlocked() { return sessionStorage.getItem(TEAM_KEY) === '1'; }
+function tryUnlock(pass) {
+  if (pass === TEAM_PASSPHRASE) {
+    setTeamUnlocked(true);
+    document.getElementById('lock-overlay').hidden = true;
+    document.getElementById('lock-err').textContent = '';
+    return true;
+  }
+  document.getElementById('lock-err').textContent = 'Incorrect passphrase.';
+  return false;
+}
+document.getElementById('team-badge').addEventListener('click', () => {
+  if (isTeamUnlocked()) { setTeamUnlocked(false); switchTab('overview'); return; }
+  document.getElementById('lock-overlay').hidden = false;
+  document.getElementById('lock-input').value = '';
+  document.getElementById('lock-input').focus();
+});
+document.getElementById('lock-submit').addEventListener('click', () => tryUnlock(document.getElementById('lock-input').value));
+document.getElementById('lock-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(e.target.value); });
+document.getElementById('lock-overlay').addEventListener('click', e => { if (e.target.id === 'lock-overlay') document.getElementById('lock-overlay').hidden = true; });
+
+// Triple-tap the header (mobile-friendly alternative to typing a passphrase on desktop only)
+let tapCount = 0, tapTimer = null;
+document.getElementById('hdr-tap-zone').addEventListener('click', () => {
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => { tapCount = 0; }, 600);
+  if (tapCount >= 3) {
+    tapCount = 0;
+    if (!isTeamUnlocked()) {
+      document.getElementById('lock-overlay').hidden = false;
+      document.getElementById('lock-input').focus();
+    }
+  }
+});
+
+if (isTeamUnlocked()) setTeamUnlocked(true);
+
+// --- Load data ---
+async function load() {
+  try {
+    const res = await fetch('/api/summary');
+    DATA = await res.json();
+    const badge = document.getElementById('status-badge');
+    if (DATA.status === 'ok') {
+      badge.textContent = `LIVE · ${DATA.total_records} records`;
+      badge.className = 'badge live';
+      renderAll();
+    } else if (DATA.status === 'pending_first_fetch') {
+      badge.textContent = 'CONNECTING…';
+      badge.className = 'badge team';
+    } else {
+      badge.textContent = 'NOT CONFIGURED';
+      badge.className = 'badge team';
+    }
+  } catch (err) {
+    document.getElementById('status-badge').textContent = 'ERROR';
+  }
 }
 load();
 </script>

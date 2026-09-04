@@ -1,4 +1,5 @@
 import { fetchKoboData } from './kobo.js';
+import { aggregate } from './aggregate.js';
 
 // Shared by the cron trigger and the on-demand /api/refresh route, so both
 // paths do exactly the same fetch-and-store — no duplicated logic to drift.
@@ -15,7 +16,17 @@ async function refreshData(env) {
       fetched_at: new Date().toISOString(),
       results,
     };
+    // Aggregates are what the dashboard actually renders from — computed
+    // here, once, per refresh, not recomputed from raw records on every
+    // page load in the browser.
+    const summary = {
+      status: 'ok',
+      total_records: results.length,
+      fetched_at: payload.fetched_at,
+      ...aggregate(results),
+    };
     await env.DASHBOARD_KV.put('data', JSON.stringify(payload));
+    await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));
     return { ok: true, payload };
   } catch (err) {
     return { ok: false, reason: err.message };
@@ -33,6 +44,19 @@ export default {
           status: env.KOBO_ASSET_ID ? 'pending_first_fetch' : 'not_configured',
           total_records: 0,
           results: [],
+        }
+      );
+    }
+
+    if (url.pathname === '/api/summary') {
+      const stored = await env.DASHBOARD_KV.get('summary', 'json');
+      return Response.json(
+        stored || {
+          status: env.KOBO_ASSET_ID ? 'pending_first_fetch' : 'not_configured',
+          total_records: 0,
+          overall: null,
+          schools: {},
+          dq: { flags: [], enumerator_totals: {} },
         }
       );
     }
