@@ -340,7 +340,14 @@ const T = {
 
 let LANG = localStorage.getItem('soma_lang') || 'sw';
 function t(key) { return (T[LANG] && T[LANG][key]) || (T.sw[key] || key); }
-function bi(obj) { return obj ? (obj[LANG] || obj.sw || obj.en || '') : ''; }
+// Handles both the new {sw,en} bilingual shape and plain strings — older
+// cached insights (generated before bilingual support existed) are plain
+// strings; they still display, just not translated, until regenerated.
+function bi(obj) {
+  if (!obj) return '';
+  if (typeof obj === 'string') return obj;
+  return obj[LANG] || obj.sw || obj.en || '';
+}
 
 const GROUP_NAMES = {
   sw: ['Anaanza', 'Anachipukia', 'Anaendelea', 'Amefikia Kiwango'],
