@@ -75,10 +75,28 @@ const GROUP_NAMES = {
   en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
 };
 const LEVEL_COLORS = ['#BE6243', '#FFC650', '#5EA6B8', '#354062'];
+const ROUND_META = {
+  pilot: { number: null, method: 'census', technical: { sw: 'Jaribio', en: 'Pilot' } },
+  round1: { number: 1, method: 'census', technical: { sw: 'Msingi', en: 'Baseline' } },
+  round2: { number: 2, method: 'sample', technical: { sw: 'Katikati', en: 'Midline' } },
+  round3: { number: 3, method: 'sample', technical: { sw: 'Mwisho', en: 'Endline' } },
+};
 const qs = new URLSearchParams(location.search);
 const LANG = qs.get('lang') === 'en' ? 'en' : 'sw';
 const TYPE = qs.get('type') === 'school' ? 'school' : 'district';
 const SCHOOL_ID = qs.get('id');
+const YEAR_PARAM = qs.get('year');
+
+function roundsForYear(year) { return year === '2026' ? ['pilot'] : ['round1', 'round2', 'round3']; }
+function roundLabel(key) {
+  const m = ROUND_META[key];
+  return m.number ? `${LANG === 'sw' ? 'Raundi' : 'Round'} ${m.number} (${m.technical[LANG]})` : m.technical[LANG];
+}
+function bestAvailableRound(rounds, year) {
+  const seq = roundsForYear(year);
+  for (let i = seq.length - 1; i >= 0; i--) if (rounds[seq[i]]?.n > 0) return seq[i];
+  return seq[0];
+}
 
 const STR = LANG === 'en' ? {
   title_school: 'School Report', title_district: 'District Report',
@@ -101,7 +119,6 @@ const STR = LANG === 'en' ? {
 };
 
 function pct(c, n) { return n > 0 ? Math.round((c / n) * 100) : 0; }
-function bestRound(overall) { for (const r of ['endline', 'midline', 'baseline']) if (overall[r]?.n) return r; return 'baseline'; }
 function journeyHtml(bucket) {
   if (!bucket || !bucket.n) return `<div style="font-size:11px;color:#9aa4b8">${STR.no_data}</div>`;
   let h = '<div class="journey">';
@@ -120,46 +137,49 @@ async function build() {
   const d = await res.json();
   const now = new Date().toLocaleDateString(LANG === 'sw' ? 'sw-TZ' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
   document.getElementById('hmeta').innerHTML = `${STR.generated}: ${now}<br><span style="font-size:8.5px">${LANG === 'sw' ? 'Changanua kwa dashibodi hai' : 'Scan for live dashboard'}</span>`;
-  // QR generated via a public, no-key encoding service at report-build time
-  // only — the printed image itself has no ongoing dependency on it once
-  // generated; scanning it later is just reading the encoded URL.
   const dashboardUrl = `${location.origin}/?lang=${LANG}`;
   document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=0&data=${encodeURIComponent(dashboardUrl)}`;
 
+  const years = d.years || [];
+  const year = years.includes(YEAR_PARAM) ? YEAR_PARAM : years[years.length - 1];
+  if (!year) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
+  const Y = d.by_year[year];
+  const seq = roundsForYear(year);
+
   if (TYPE === 'school') {
-    const s = d.schools[SCHOOL_ID];
+    const s = Y.schools[SCHOOL_ID];
     document.getElementById('tb-title').textContent = STR.title_school;
-    document.getElementById('hsub').textContent = STR.title_school;
+    document.getElementById('hsub').textContent = `${STR.title_school} — ${year}`;
     if (!s) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
-    let html = `<h1>${s.name}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${s.ward || ''}</div>`;
+    let html = `<h1>${s.name}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${s.ward || ''} · ${year}</div>`;
     Object.entries(s.grades).sort().forEach(([g, rs]) => {
-      const round = bestRound(rs);
-      html += `<h2>${STR.grade} ${g} — ${round}</h2>`;
+      const round = bestAvailableRound(rs, year);
+      html += `<h2>${STR.grade} ${g} — ${roundLabel(round)}</h2>`;
       html += `<div class="kg"><div class="kc"><div class="kl">${STR.students}</div><div class="kv">${rs[round].n}</div></div></div>`;
       html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:5px">${STR.reading}</div>${journeyHtml(rs[round].reading.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n }))}`;
       html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:10px 0 5px">${STR.arithmetic}</div>${journeyHtml(rs[round].arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n }))}`;
-      if (rs.baseline?.n && rs.midline?.n) {
-        html += `<h2>${STR.trend}</h2><table><tr><th>${STR.grade}</th><th>${STR.baseline}</th><th>${STR.now}</th><th>${STR.change}</th></tr>`;
-        const b = pct(rs.baseline.reading[3], rs.baseline.n), m = pct(rs.midline.reading[3], rs.midline.n);
+      if (seq[0] && rs[seq[0]]?.n && seq[1] && rs[seq[1]]?.n) {
+        html += `<h2>${STR.trend}</h2><table><tr><th>${STR.grade}</th><th>${roundLabel(seq[0])}</th><th>${roundLabel(seq[1])}</th><th>${STR.change}</th></tr>`;
+        const b = pct(rs[seq[0]].reading[3], rs[seq[0]].n), m = pct(rs[seq[1]].reading[3], rs[seq[1]].n);
         html += `<tr><td>${STR.reading}</td><td>${b}%</td><td>${m}%</td><td>${m - b >= 0 ? '+' : ''}${m - b}</td></tr></table>`;
       }
     });
     document.getElementById('content').innerHTML = html;
   } else {
     document.getElementById('tb-title').textContent = STR.title_district;
-    document.getElementById('hsub').textContent = STR.title_district;
-    const round = bestRound(d.overall);
+    document.getElementById('hsub').textContent = `${STR.title_district} — ${year}`;
+    const round = bestAvailableRound(Y.rounds, year);
     let html = `<h1>${STR.title_district}</h1>`;
     html += `<div class="kg">
-      <div class="kc"><div class="kl">${STR.students}</div><div class="kv">${d.overall[round].n}</div></div>
-      <div class="kc"><div class="kl">${STR.round}</div><div class="kv" style="font-size:13px">${round}</div></div>
-      <div class="kc"><div class="kl">${STR.reading}</div><div class="kv">${pct(d.overall[round].reading[3], d.overall[round].n)}%</div></div>
-      <div class="kc"><div class="kl">${STR.arithmetic}</div><div class="kv">${pct(d.overall[round].arithmetic[3], d.overall[round].n)}%</div></div>
+      <div class="kc"><div class="kl">${STR.students}</div><div class="kv">${Y.rounds[round].n}</div></div>
+      <div class="kc"><div class="kl">${STR.round}</div><div class="kv" style="font-size:12px">${roundLabel(round)}</div></div>
+      <div class="kc"><div class="kl">${STR.reading}</div><div class="kv">${pct(Y.rounds[round].reading[3], Y.rounds[round].n)}%</div></div>
+      <div class="kc"><div class="kl">${STR.arithmetic}</div><div class="kv">${pct(Y.rounds[round].arithmetic[3], Y.rounds[round].n)}%</div></div>
     </div>`;
-    html += `<h2>${STR.reading}</h2>${journeyHtml(d.overall[round].reading.reduce((o, v, i) => (o[i] = v, o), { n: d.overall[round].n }))}`;
-    html += `<h2>${STR.arithmetic}</h2>${journeyHtml(d.overall[round].arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: d.overall[round].n }))}`;
+    html += `<h2>${STR.reading}</h2>${journeyHtml(Y.rounds[round].reading.reduce((o, v, i) => (o[i] = v, o), { n: Y.rounds[round].n }))}`;
+    html += `<h2>${STR.arithmetic}</h2>${journeyHtml(Y.rounds[round].arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: Y.rounds[round].n }))}`;
     html += `<h2>${STR.school_table}</h2><table><tr><th>${STR.school_col}</th><th>${STR.ward_col}</th><th>${STR.n_col}</th><th>${STR.reading}</th><th>${STR.arithmetic}</th></tr>`;
-    Object.values(d.schools).forEach(s => {
+    Object.values(Y.schools).forEach(s => {
       let n = 0, r3 = 0, a3 = 0;
       Object.values(s.grades).forEach(g => { if (g[round]) { n += g[round].n; r3 += g[round].reading[3]; a3 += g[round].arithmetic[3]; } });
       if (n) html += `<tr><td>${s.name}</td><td>${s.ward || ''}</td><td>${n}</td><td>${pct(r3, n)}%</td><td>${pct(a3, n)}%</td></tr>`;

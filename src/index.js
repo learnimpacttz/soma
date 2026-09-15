@@ -1,6 +1,6 @@
 import { fetchKoboData } from './kobo.js';
 import { aggregate } from './aggregate.js';
-import { generateInsights } from './insights.js';
+import { generateInsights, INSIGHTS_SCHEMA_VERSION } from './insights.js';
 
 // Shared by the cron trigger and the on-demand /api/refresh route, so both
 // paths do exactly the same fetch-and-store — no duplicated logic to drift.
@@ -55,9 +55,9 @@ export default {
         stored || {
           status: env.KOBO_ASSET_ID ? 'pending_first_fetch' : 'not_configured',
           total_records: 0,
-          overall: null,
-          schools: {},
-          dq: { flags: [], enumerator_totals: {} },
+          years: [],
+          by_year: {},
+          dq: { flags: [], enumerator_totals: {}, round_mismatches: 0 },
         }
       );
     }
@@ -117,12 +117,12 @@ export default {
         return Response.json({ ok: false, reason: 'ANTHROPIC_API_KEY not set' }, { status: 501 });
       }
       const summary = await env.DASHBOARD_KV.get('summary', 'json');
-      if (!summary || !summary.overall) {
+      if (!summary || !summary.years || summary.years.length === 0) {
         return Response.json({ ok: false, reason: 'no data to analyze yet' }, { status: 409 });
       }
       try {
         const result = await generateInsights(summary, env.ANTHROPIC_API_KEY);
-        const stored = { status: 'ok', generated_at: new Date().toISOString(), based_on_records: summary.total_records, ...result };
+        const stored = { status: 'ok', schema_version: INSIGHTS_SCHEMA_VERSION, generated_at: new Date().toISOString(), based_on_records: summary.total_records, ...result };
         await env.DASHBOARD_KV.put('insights', JSON.stringify(stored));
         return Response.json({ ok: true, insights: stored });
       } catch (err) {

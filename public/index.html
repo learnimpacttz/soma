@@ -39,6 +39,8 @@ a{color:#5EA6B8}a:hover{color:#354062}
 
 .panel{max-width:600px;margin:0 auto;padding:14px}
 .panel[hidden]{display:none}
+.year-picker-wrap{max-width:600px;margin:0 auto;padding:10px 14px 0}
+.year-picker-wrap:empty,.year-picker-wrap .gpills:empty{display:none}
 
 .intro-line{font-size:12px;color:#5a6478;line-height:1.6;background:#fff;border-radius:10px;padding:13px 15px;margin-bottom:14px;box-shadow:0 1px 4px rgba(53,64,98,.10)}
 .intro-line b{color:#354062}
@@ -150,6 +152,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
   .tabs{display:none}
   .mainwrap{max-width:none}
   .panel{max-width:1100px;padding:28px}
+  .year-picker-wrap{max-width:1100px;padding:16px 28px 0}
   .kg{grid-template-columns:repeat(4,1fr)}
   .two-col{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:start}
   .two-col .card{margin-bottom:18px}
@@ -185,6 +188,9 @@ a{color:#5EA6B8}a:hover{color:#354062}
     </div>
 
     <div class="tabs" id="tabbar"></div>
+    <div class="year-picker-wrap" id="year-picker-wrap">
+      <div class="gpills" id="year-picker" style="margin-bottom:0"></div>
+    </div>
 
     <div class="panel on" data-panel="overview">
       <div class="intro-line" data-t="intro_overview"></div>
@@ -300,7 +306,7 @@ const T = {
     ct_journey: 'Safari ya Kujifunza', ct_by_grade: 'kwa darasa',
     ct_skill_breakdown: 'Ustadi kwa Kina', ct_trend_reading: 'Usomaji — Amefikia Kiwango+',
     ct_trend_arith: 'Hesabu — Amefikia Kiwango+', ct_trend_sub: 'Msingi → Katikati → Mwisho',
-    ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Wanaosonga Haraka', ct_rising_sub: 'ongezeko kubwa, Msingi → Katikati',
+    ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Ongezeko Kubwa la Ujifunzaji', ct_rising_sub: 'ongezeko kubwa, Msingi → Katikati',
     ct_rounds: 'Raundi za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
     ct_enumerators: 'Uwasilishaji kwa Mtahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
     kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Waliofikia Kiwango',
@@ -320,8 +326,9 @@ const T = {
     empty_no_schools: 'Hakuna takwimu za shule bado.', empty_rising: 'Inahitaji raundi ya Msingi na Katikati kuonyesha ongezeko.',
     empty_flags: 'Hakuna vibendera — ubora wa takwimu uko sawa.', empty_enum: 'Hakuna uwasilishaji bado',
     empty_no_data_row: 'Hakuna takwimu bado', vs_baseline: 'ikilinganishwa na Msingi',
-    insights_loading: 'Bofya kitufe kuzalisha maarifa mapya.', insights_generate: '🧠 Zalisha Maarifa',
+    insights_loading: 'Bofya kitufe kuzalisha uchambuzi mpya.', insights_generate: '🧠 Zalisha Uchambuzi',
     insights_generating: 'Inazalisha…', insights_refreshed: 'Ilisasishwa',
+    insights_stale: 'Uchambuzi wa awali ni wa zamani — bofya kuzalisha mpya.',
     ins_what_shows: 'Takwimu Zinaonyesha Nini', ins_whats_done: 'Kilichofanyika', ins_what_next: 'Hatua Zinazofuata',
     guidance_draft_note: '⚠️ Rasimu ya kwanza ya mwongozo — itaboreshwa. Hii inaonyesha mwelekeo wa jumla wa shughuli za kufundishia kwa kila kundi, kama zinavyokabidhiwa kwa walimu wakati wa ziara ya tathmini ya msingi.',
   },
@@ -356,6 +363,7 @@ const T = {
     empty_no_data_row: 'No data yet', vs_baseline: 'vs Baseline',
     insights_loading: 'Click the button to generate fresh insights.', insights_generate: '🧠 Generate Insights',
     insights_generating: 'Generating…', insights_refreshed: 'Refreshed',
+    insights_stale: 'The previous analysis is outdated — click to generate a fresh one.',
     ins_what_shows: 'What the Data Shows', ins_whats_done: "What's Been Done", ins_what_next: 'Next Steps',
     guidance_draft_note: "⚠️ First draft guidance — will be refined. Shows the general direction of teaching activities for each group, the kind handed to teachers at the baseline visit.",
   },
@@ -386,8 +394,33 @@ const ARITH_SKILL = {
   en: ['not yet recognizing numbers', 'recognizing numbers', 'can add', 'can subtract'],
 };
 const LEVEL_COLORS = ['#BE6243', '#FFC650', '#5EA6B8', '#354062'];
-const ROUNDS = ['baseline', 'midline', 'endline'];
-function roundLabel(r) { return t('lbl_' + r); }
+
+// Rounds are computed server-side from each submission's own date (see
+// src/rounds.js) — 2026 is Pilot-only; 2027+ years use Round 1/2/3. Label
+// format per Michael: "Round N" prominent, technical M&E term (Baseline/
+// Midline/Endline) shown small/faint below it.
+const ROUND_META = {
+  pilot: { number: null, method: 'census', technical: { sw: 'Jaribio', en: 'Pilot' } },
+  round1: { number: 1, method: 'census', technical: { sw: 'Msingi', en: 'Baseline' } },
+  round2: { number: 2, method: 'sample', technical: { sw: 'Katikati', en: 'Midline' } },
+  round3: { number: 3, method: 'sample', technical: { sw: 'Mwisho', en: 'Endline' } },
+};
+function roundsForYear(year) { return year === '2026' ? ['pilot'] : ['round1', 'round2', 'round3']; }
+function roundTop(key) { const m = ROUND_META[key]; return m.number ? (LANG === 'sw' ? `Raundi ${m.number}` : `Round ${m.number}`) : m.technical[LANG]; }
+function roundLabelHtml(key) {
+  const m = ROUND_META[key];
+  const sub = m.number ? m.technical[LANG] : '';
+  return `<span style="font-weight:700">${roundTop(key)}</span>${sub ? `<br><span style="font-size:9px;color:#9aa4b8;font-weight:400">${sub}</span>` : ''}`;
+}
+function roundLabelPlain(key) {
+  const m = ROUND_META[key];
+  return m.number ? `${roundTop(key)} (${m.technical[LANG]})` : m.technical[LANG];
+}
+function methodBadge(key) {
+  const m = ROUND_META[key].method;
+  const label = m === 'census' ? (LANG === 'sw' ? 'Sensa' : 'Census') : (LANG === 'sw' ? 'Sampuli' : 'Sample');
+  return `<span style="font-size:8.5px;font-weight:700;background:#eef1f6;color:#7c869c;padding:1px 6px;border-radius:6px;margin-left:5px">${label}</span>`;
+}
 
 const TAB_DEFS = [
   { key: 'overview', team: false }, { key: 'trends', team: false }, { key: 'schools', team: false },
@@ -444,18 +477,39 @@ const GUIDANCE = {
 // withstand a determined attacker. Change before wider rollout.
 const TEAM_PASSPHRASE = 'soma-kibaha-2026';
 
+// Must match src/insights.js's INSIGHTS_SCHEMA_VERSION exactly.
+const INSIGHTS_SCHEMA_VERSION = 2;
 let DATA = null;
 let INSIGHTS = null;
+let INSIGHTS_STALE = false;
 let currentGrade = null;
 let currentTab = 'overview';
+let currentYear = null;
 
 function pct(count, n) { return n > 0 ? Math.round((count / n) * 100) : 0; }
 
-function bestAvailableRound(overall) {
-  for (const r of ['endline', 'midline', 'baseline']) {
-    if (overall[r] && overall[r].n > 0) return r;
+function yearData() { return DATA && currentYear ? DATA.by_year[currentYear] : null; }
+
+// Latest round (in that year's sequence) that actually has data, falling
+// back to the sequence's first round if nothing has data yet.
+function bestAvailableRound(rounds, year) {
+  const seq = roundsForYear(year);
+  for (let i = seq.length - 1; i >= 0; i--) {
+    if (rounds[seq[i]] && rounds[seq[i]].n > 0) return seq[i];
   }
-  return 'baseline';
+  return seq[0];
+}
+
+function renderYearPicker() {
+  const el = document.getElementById('year-picker');
+  if (!el) return;
+  const years = DATA?.years || [];
+  if (!currentYear || !years.includes(currentYear)) currentYear = years[years.length - 1] || null;
+  if (years.length <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = years.map(y => `<button class="gpill ${y === currentYear ? 'on' : ''}" data-year="${y}">${y}</button>`).join('');
+  el.querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => { currentYear = btn.dataset.year; currentGrade = null; renderYearPicker(); renderAllForYear(); };
+  });
 }
 
 /* ============================== Tabs / nav (built from TAB_DEFS so mobile tabbar + desktop sidebar stay in sync) ============================== */
@@ -513,18 +567,21 @@ function journeyHtml(bucket, skillLabels) {
 }
 
 function renderOverview() {
-  const overall = DATA.overall;
-  const round = bestAvailableRound(overall);
-  const baseline = overall.baseline;
-  const current = overall[round];
+  const Y = yearData();
+  if (!Y) { document.getElementById('ov-kpis').innerHTML = `<div class="empty">${t('empty_no_data')}</div>`; return; }
+  const seq = roundsForYear(currentYear);
+  const firstRound = seq[0];
+  const round = bestAvailableRound(Y.rounds, currentYear);
+  const first = Y.rounds[firstRound];
+  const current = Y.rounds[round];
 
   document.getElementById('ov-kpis').innerHTML = `
-    <div class="kc"><div class="kl">${t('kpi_students')}</div><div class="kv">${current.n}</div><div class="ks">${roundLabel(round)}</div></div>
-    <div class="kc"><div class="kl">${t('kpi_schools')}</div><div class="kv">${Object.keys(DATA.schools).length}</div><div class="ks">${t('of_schools')}</div></div>
-    <div class="kc"><div class="kl">${t('kpi_reading')}</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round !== 'baseline' ? pct(baseline.reading[3], baseline.n) + '% ' + t('vs_baseline') : roundLabel('baseline')}</div></div>
-    <div class="kc"><div class="kl">${t('kpi_arith')}</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round !== 'baseline' ? pct(baseline.arithmetic[3], baseline.n) + '% ' + t('vs_baseline') : roundLabel('baseline')}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_students')}</div><div class="kv">${current.n}</div><div class="ks">${roundLabelPlain(round)}${methodBadge(round)}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_schools')}</div><div class="kv">${Object.keys(Y.schools).length}</div><div class="ks">${t('of_schools')}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_reading')}</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round !== firstRound ? pct(first.reading[3], first.n) + '% ' + t('vs_baseline') : roundLabelPlain(firstRound)}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_arith')}</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round !== firstRound ? pct(first.arithmetic[3], first.n) + '% ' + t('vs_baseline') : roundLabelPlain(firstRound)}</div></div>
   `;
-  document.getElementById('ov-round-lbl').textContent = roundLabel(round);
+  document.getElementById('ov-round-lbl').innerHTML = roundLabelHtml(round);
 
   document.getElementById('ov-journey').innerHTML =
     `<div class="subj-label">${t('lbl_reading')}</div>${journeyHtml(current.reading.reduce((o, v, i) => (o[i] = v, o), { n: current.n }), READING_SKILL)}` +
@@ -535,7 +592,8 @@ function renderOverview() {
 }
 
 function renderGradePills() {
-  const grades = Object.keys(DATA.by_grade).filter(g => g !== 'unknown').sort();
+  const Y = yearData();
+  const grades = Y ? Object.keys(Y.by_grade).filter(g => g !== 'unknown').sort() : [];
   if (!currentGrade || !grades.includes(currentGrade)) currentGrade = grades[0] || null;
   document.getElementById('grade-pills').innerHTML = grades.map(g =>
     `<button class="gpill ${g === currentGrade ? 'on' : ''}" data-grade="${g}">${t('lbl_grade')} ${g}</button>`
@@ -557,14 +615,17 @@ function skillRow(label, base, now) {
 
 function renderSkillBreakdown() {
   const el = document.getElementById('skill-breakdown');
-  const g = DATA.by_grade[currentGrade];
-  if (!g || !g.baseline.n) { el.innerHTML = `<div class="empty">${t('empty_no_grade')}</div>`; return; }
-  const round = bestAvailableRound(g);
-  const base = g.baseline, now = g[round];
+  const Y = yearData();
+  const g = Y && Y.by_grade[currentGrade];
+  const seq = roundsForYear(currentYear);
+  const firstRound = seq[0];
+  if (!g || !g[firstRound].n) { el.innerHTML = `<div class="empty">${t('empty_no_grade')}</div>`; return; }
+  const round = bestAvailableRound(g, currentYear);
+  const base = g[firstRound], now = g[round];
   const names = GROUP_NAMES[LANG];
-  let html = `<div class="subj-label">${t('lbl_reading')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabel('baseline')}</th><th style="text-align:right">${roundLabel(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
+  let html = `<div class="subj-label">${t('lbl_reading')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabelPlain(firstRound)}</th><th style="text-align:right">${roundLabelPlain(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
   names.forEach((lbl, i) => { html += skillRow(lbl, pct(base.reading[i], base.n), pct(now.reading[i], now.n)); });
-  html += `</table><div class="subj-label">${t('lbl_arithmetic')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabel('baseline')}</th><th style="text-align:right">${roundLabel(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
+  html += `</table><div class="subj-label">${t('lbl_arithmetic')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabelPlain(firstRound)}</th><th style="text-align:right">${roundLabelPlain(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
   names.forEach((lbl, i) => { html += skillRow(lbl, pct(base.arithmetic[i], base.n), pct(now.arithmetic[i], now.n)); });
   html += '</table>';
   el.innerHTML = html;
@@ -575,28 +636,37 @@ function renderSkillBreakdown() {
 // an estimate, not a forecast — deliberately not more sophisticated than
 // that given how few rounds/how much small-sample noise exists this early
 // (see the sampling-protocol precision-ceiling finding from earlier work).
-function projectedEndline(overall, field) {
-  const b = overall.baseline, m = overall.midline, e = overall.endline;
-  if (e?.n) return null; // real endline data exists, no need to project
+function projectedRound3(rounds, field) {
+  const b = rounds.round1, m = rounds.round2, e = rounds.round3;
+  if (e?.n) return null; // real Round 3 data exists, no need to project
   if (!b?.n || !m?.n) return null;
   const bp = pct(b[field][3], b.n), mp = pct(m[field][3], m.n);
   return Math.max(0, Math.min(100, mp + (mp - bp)));
 }
 
 function renderTrends() {
-  const overall = DATA.overall;
+  const Y = yearData();
+  const seq = currentYear ? roundsForYear(currentYear) : [];
+  if (!Y || seq.length < 2) {
+    const msg = `<div class="empty">${t('empty_no_data')}</div>`;
+    document.getElementById('trend-reading').innerHTML = msg;
+    document.getElementById('trend-arith').innerHTML = '';
+    document.getElementById('trend-note').hidden = true;
+    return;
+  }
+  const rounds = Y.rounds;
   const maxH = 90;
   function bars(field) {
-    const vals = ROUNDS.map(r => overall[r].n ? pct(overall[r][field][3], overall[r].n) : null);
-    const projected = projectedEndline(overall, field);
+    const vals = seq.map(r => rounds[r].n ? pct(rounds[r][field][3], rounds[r].n) : null);
+    const projected = projectedRound3(rounds, field);
     const allVals = vals.filter(v => v != null).concat(projected != null ? [projected] : []);
     const max = Math.max(...allVals, 1);
-    let html = ROUNDS.map((r, i) => {
+    let html = seq.map((r, i) => {
       const v = vals[i];
       const h = v == null ? 4 : Math.max(4, (v / max) * maxH);
       return `<div class="trend-bar-wrap"><div class="trend-val">${v == null ? '—' : v + '%'}</div>
         <div class="trend-bar" style="height:${h}px;background:${v == null ? '#e8ecf3' : '#5EA6B8'}"></div>
-        <div class="trend-lbl">${roundLabel(r)}</div></div>`;
+        <div class="trend-lbl">${roundTop(r)}</div></div>`;
     }).join('');
     if (projected != null) {
       const h = Math.max(4, (projected / max) * maxH);
@@ -608,14 +678,20 @@ function renderTrends() {
   }
   document.getElementById('trend-reading').innerHTML = bars('reading');
   document.getElementById('trend-arith').innerHTML = bars('arithmetic');
-  const hasProjection = projectedEndline(overall, 'reading') != null || projectedEndline(overall, 'arithmetic') != null;
+  const hasProjection = projectedRound3(rounds, 'reading') != null || projectedRound3(rounds, 'arithmetic') != null;
   document.getElementById('trend-note').hidden = !hasProjection;
 }
 
 function renderSchools() {
-  const round = bestAvailableRound(DATA.overall);
-  document.getElementById('sc-round-lbl').textContent = `${roundLabel(round)}`;
-  const rows = Object.entries(DATA.schools).map(([id, s]) => {
+  const Y = yearData();
+  if (!Y) {
+    document.getElementById('school-compare').innerHTML = `<div class="empty">${t('empty_no_schools')}</div>`;
+    document.getElementById('rising-fast').innerHTML = '';
+    return;
+  }
+  const round = bestAvailableRound(Y.rounds, currentYear);
+  document.getElementById('sc-round-lbl').innerHTML = roundLabelHtml(round);
+  const rows = Object.entries(Y.schools).map(([id, s]) => {
     let n = 0, correct = 0;
     Object.values(s.grades).forEach(g => { if (g[round]) { n += g[round].n; correct += g[round].reading[3]; } });
     return { id, name: s.name, ward: s.ward, pct: pct(correct, n), n };
@@ -629,11 +705,11 @@ function renderSchools() {
       <button class="report-btn" style="padding:5px 9px;font-size:10px" onclick="openReport('school','${s.id}')">📄</button>
     </div>`).join('') : `<div class="empty">${t('empty_no_schools')}</div>`;
 
-  const gains = Object.entries(DATA.schools).map(([id, s]) => {
+  const gains = Object.entries(Y.schools).map(([id, s]) => {
     let bn = 0, bc = 0, mn = 0, mc = 0;
     Object.values(s.grades).forEach(g => {
-      if (g.baseline) { bn += g.baseline.n; bc += g.baseline.reading[3]; }
-      if (g.midline) { mn += g.midline.n; mc += g.midline.reading[3]; }
+      if (g.round1) { bn += g.round1.n; bc += g.round1.reading[3]; }
+      if (g.round2) { mn += g.round2.n; mc += g.round2.reading[3]; }
     });
     if (!bn || !mn) return null;
     return { name: s.name, ward: s.ward, gain: pct(mc, mn) - pct(bc, bn) };
@@ -648,20 +724,26 @@ function renderSchools() {
 }
 
 function renderProgramme() {
-  const overall = DATA.overall;
-  const target = Math.max(1, ...ROUNDS.map(r => overall[r].n));
-  document.getElementById('round-progress').innerHTML = ROUNDS.map(r => {
-    const n = overall[r].n;
+  const Y = yearData();
+  if (!Y) {
+    document.getElementById('round-progress').innerHTML = `<div class="empty">${t('empty_no_data')}</div>`;
+    document.getElementById('school-grade-tbl').innerHTML = '';
+    return;
+  }
+  const seq = roundsForYear(currentYear);
+  const target = Math.max(1, ...seq.map(r => Y.rounds[r].n));
+  document.getElementById('round-progress').innerHTML = seq.map(r => {
+    const n = Y.rounds[r].n;
     const h = Math.max(4, (n / target) * 90);
     return `<div class="trend-bar-wrap"><div class="trend-val">${n}</div>
       <div class="trend-bar" style="height:${h}px;background:${n ? '#354062' : '#e8ecf3'}"></div>
-      <div class="trend-lbl">${roundLabel(r)}</div></div>`;
+      <div class="trend-lbl">${roundTop(r)}</div></div>`;
   }).join('');
 
   const rows = [];
-  Object.entries(DATA.schools).forEach(([id, s]) => {
+  Object.entries(Y.schools).forEach(([id, s]) => {
     Object.entries(s.grades).forEach(([g, rs]) => {
-      const round = bestAvailableRound(rs);
+      const round = bestAvailableRound(rs, currentYear);
       if (!rs[round].n) return;
       rows.push(`<tr><td>${s.name}</td><td>${t('lbl_grade')} ${g}</td><td>${rs[round].n}</td><td>${pct(rs[round].reading[3], rs[round].n)}%</td><td>${pct(rs[round].arithmetic[3], rs[round].n)}%</td></tr>`);
     });
@@ -751,9 +833,10 @@ function renderInsights() {
   const opEl = document.getElementById('op-intel');
   const btnHtml = `<button class="ins-btn" id="gen-insights-btn" onclick="triggerInsights()">${t('insights_generate')}</button>`;
   if (!INSIGHTS) {
-    pubEl.innerHTML = `<div class="empty">${t('insights_loading')}</div><div style="text-align:center;margin-top:10px">${btnHtml}</div>`;
-    progEl.innerHTML = `<div class="empty">${t('insights_loading')}</div>`;
-    opEl.innerHTML = `<div class="empty">${t('insights_loading')}</div>`;
+    const msg = INSIGHTS_STALE ? t('insights_stale') : t('insights_loading');
+    pubEl.innerHTML = `<div class="empty">${msg}</div><div style="text-align:center;margin-top:10px">${btnHtml}</div>`;
+    progEl.innerHTML = `<div class="empty">${msg}</div>`;
+    opEl.innerHTML = `<div class="empty">${msg}</div>`;
     return;
   }
   pubEl.innerHTML = insightBlockHtml(INSIGHTS.public, true, 'public') + `<div style="text-align:center;margin-top:12px">${btnHtml}</div>`;
@@ -767,7 +850,7 @@ async function triggerInsights() {
   try {
     const res = await fetch('/api/generate-insights', { method: 'POST' });
     const data = await res.json();
-    if (data.ok) { INSIGHTS = data.insights; }
+    if (data.ok) { INSIGHTS = data.insights; INSIGHTS_STALE = false; }
   } catch (e) {}
   renderInsights();
 }
@@ -788,14 +871,19 @@ function renderGuidance() {
   document.getElementById('guidance-arith').innerHTML = guidanceHtml('arithmetic');
 }
 
-function renderAll() {
-  buildNav();
-  applyStaticText();
+function renderAllForYear() {
   renderOverview();
   renderTrends();
   renderSchools();
-  renderGuidance();
   renderProgramme();
+}
+
+function renderAll() {
+  buildNav();
+  applyStaticText();
+  renderYearPicker();
+  renderAllForYear();
+  renderGuidance();
   renderDQ();
   renderInsights();
 }
@@ -848,7 +936,8 @@ document.getElementById('hdr-tap-zone').addEventListener('click', () => {
 
 /* ============================== Reports ============================== */
 function openReport(kind, schoolId) {
-  const url = kind === 'school' ? `/report.html?type=school&id=${schoolId}&lang=${LANG}` : `/report.html?type=district&lang=${LANG}`;
+  const yr = currentYear ? `&year=${currentYear}` : '';
+  const url = kind === 'school' ? `/report.html?type=school&id=${schoolId}&lang=${LANG}${yr}` : `/report.html?type=district&lang=${LANG}${yr}`;
   window.open(url, '_blank');
 }
 
@@ -892,7 +981,17 @@ async function load() {
   try {
     const res2 = await fetch('/api/insights');
     const ins = await res2.json();
-    if (ins && ins.public) { INSIGHTS = ins; renderInsights(); }
+    // Cached insights from an older schema version (e.g. pre-bilingual, or
+    // missing fields a newer prompt introduced) get discarded rather than
+    // rendered half-correctly — this is exactly how the "some insight text
+    // stayed in English under Swahili" bug happened.
+    if (ins && ins.public && ins.schema_version === INSIGHTS_SCHEMA_VERSION) {
+      INSIGHTS = ins;
+    } else if (ins && ins.public) {
+      INSIGHTS = null;
+      INSIGHTS_STALE = true;
+    }
+    renderInsights();
   } catch (e) {}
 }
 if (isTeamUnlocked()) setTeamUnlocked(true);

@@ -1,29 +1,49 @@
+import { ROUND_KEYS, ROUND_META } from './rounds.js';
+
 const READING_LEVELS = ['Wanaoanza (not yet reading syllables)', 'Wanaochipukia/Emerging (reading syllables)',
   'Wanaoendelea/Progressing (reading words)', 'Waliofikia Kiwango/On Track (reading a paragraph fluently)'];
 const ARITH_LEVELS = ['Wanaoanza (not yet recognizing numbers)', 'Wanaochipukia/Emerging (recognizing numbers)',
   'Wanaoendelea/Progressing (can add)', 'Waliofikia Kiwango/On Track (can subtract)'];
 
+// Bump whenever the JSON shape or required bilingual-ness of insights
+// output changes, so the frontend can tell a cached KV entry was generated
+// under an older schema and prompt for regeneration instead of silently
+// rendering mismatched-language or missing-field content (this is exactly
+// how the "some insight text stayed in English under Swahili" bug
+// happened — old plain-string content surviving a schema change).
+export const INSIGHTS_SCHEMA_VERSION = 2;
+
 function pct(count, n) { return n > 0 ? Math.round((count / n) * 100) : 0; }
+function roundLabel(key) { return `${key} (${ROUND_META[key].technical.en}, ${ROUND_META[key].method})`; }
 
 // Condenses the full aggregate into a compact, human-readable brief for the
 // model — not the raw JSON. Keeps the prompt small and keeps Claude from
-// having to do its own arithmetic on nested count arrays.
+// having to do its own arithmetic on nested count arrays. Uses the latest
+// year with data; multi-year comparison is a reasonable future addition,
+// not built yet since there's only ever been one year of data so far.
 function buildDataBrief(summary) {
   const lines = [];
-  const overall = summary.overall;
-  for (const round of ['baseline', 'midline', 'endline']) {
-    const b = overall[round];
+  const years = summary.years || [];
+  const latestYear = years[years.length - 1];
+  if (!latestYear) return 'No data collected yet.';
+  const yearData = summary.by_year[latestYear];
+  lines.push(`YEAR: ${latestYear}`);
+
+  for (const round of ROUND_KEYS) {
+    const b = yearData.rounds[round];
     if (!b.n) continue;
-    lines.push(`${round.toUpperCase()} (n=${b.n}): Reading — ` +
+    lines.push(`${roundLabel(round)} (n=${b.n}): Reading — ` +
       READING_LEVELS.map((l, i) => `${l}: ${pct(b.reading[i], b.n)}%`).join(', ') +
       `. Arithmetic — ` + ARITH_LEVELS.map((l, i) => `${l}: ${pct(b.arithmetic[i], b.n)}%`).join(', '));
   }
 
-  lines.push('\nPER-SCHOOL (baseline, reading Waliofikia Kiwango+ / arithmetic Waliofikia Kiwango+):');
-  for (const [id, s] of Object.entries(summary.schools)) {
+  const firstRoundWithData = ROUND_KEYS.find((k) => yearData.rounds[k].n > 0);
+  lines.push(`\nPER-SCHOOL (${firstRoundWithData || 'earliest available round'}, reading Waliofikia Kiwango+ / arithmetic Waliofikia Kiwango+):`);
+  for (const [id, s] of Object.entries(yearData.schools)) {
     let n = 0, readingTop = 0, arithTop = 0;
     for (const g of Object.values(s.grades)) {
-      if (g.baseline) { n += g.baseline.n; readingTop += g.baseline.reading[3]; arithTop += g.baseline.arithmetic[3]; }
+      const b = g[firstRoundWithData];
+      if (b) { n += b.n; readingTop += b.reading[3]; arithTop += b.arithmetic[3]; }
     }
     if (n) lines.push(`- ${s.name} (${s.ward || 'ward unknown'}): n=${n}, reading ${pct(readingTop, n)}%, arithmetic ${pct(arithTop, n)}%`);
   }
@@ -50,7 +70,10 @@ Standard) for children who exceed the top skill. Every child is on a journey thr
 across the school year; the programme goal is every child reaching "Waliofikia Kiwango" for their \
 grade. SOMA groups children for differentiated classroom teaching and recognises schools for \
 LEARNING GROWTH (not absolute scores) at an annual Mwalimu Kinara ceremony co-funded by Kibaha \
-District Council. Assessment rounds are baseline (full census), then midline/endline (sampled).
+District Council. Assessment rounds each year are Round 1/Baseline (full census, Jan-Jun), Round 2/
+Midline (sample, Jul-mid Oct), and Round 3/Endline (sample, mid Oct-Dec); 2026 itself is the Pilot
+year (full census, doesn't follow the normal 3-round annual cycle since the programme launched
+mid-year).
 
 ALWAYS use this exact terminology (Wanaoanza/Wanaochipukia/Wanaoendelea/Waliofikia Kiwango/Waliovuka \
 Kiwango) when referring to stages — never invent alternative names, never use the singular "Ana-" \
@@ -108,8 +131,11 @@ Rules:
 activity that isn't implied by the brief.
 - If a data quality flags list says "None currently", operational_intelligence.findings should say \
 so plainly in both languages, not invent a problem.
-- If baseline is the only round with data, say so explicitly rather than implying a trend that \
-doesn't exist yet.`;
+- If only one round has data so far, say so explicitly rather than implying a trend that doesn't \
+exist yet.
+- A "round_mismatch" data quality flag means an officer's manual round selection in KoBo disagreed \
+with what the submission date computes to — report it as a data-entry discrepancy to check, not as \
+a finding about a school's performance.`;
 
 export async function generateInsights(summary, apiKey) {
   const brief = buildDataBrief(summary);
