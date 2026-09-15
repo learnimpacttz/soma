@@ -16,17 +16,18 @@ export const SCHOOLS = {
 };
 
 // Group names follow Tanzania's own NECTA/KKK national assessment framework's
-// growth-verb vocabulary (wanaochipukia = "sprouting", wanaoendelea =
-// "progressing", wanaofikia kipimo = "reaching the standard") rather than
-// static labels like the old "Mwanzo" — same journey framing already
-// recognized nationally since the KKK strategic plan (Jan 2026), applied
-// consistently across both reading and arithmetic. English side mirrors
-// standard literacy-pedagogy terms (Emergent/Developing/Proficient).
+// growth-verb vocabulary — plural forms (wanaoanza, wanaochipukia,
+// wanaoendelea, waliofikia kiwango), matching NECTA's actual grammar for
+// describing a group/statistic (corrected 2026-09-15 from an earlier
+// singular "Ana-" form) — same journey framing recognized nationally since
+// the KKK strategic plan (Jan 2026), applied consistently across both
+// reading and arithmetic. English side mirrors standard literacy-pedagogy
+// terms (Emergent/Developing/Proficient).
 export const GROUP_NAMES = {
-  sw: ['Anaanza', 'Anachipukia', 'Anaendelea', 'Amefikia Kiwango'],
+  sw: ['Wanaoanza', 'Wanaochipukia', 'Wanaoendelea', 'Waliofikia Kiwango'],
   en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
 };
-export const OUTLIER_NAME = { sw: 'Amevuka Kiwango', en: 'Beyond Standard' };
+export const OUTLIER_NAME = { sw: 'Waliovuka Kiwango', en: 'Beyond Standard' };
 
 // The specific skill each level actually represents — shown alongside the
 // group name so it's never just an abstract label (ask: "be clear at which

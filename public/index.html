@@ -65,12 +65,12 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .journey{display:flex;align-items:flex-start;position:relative;padding:6px 2px 2px}
 .journey::before{content:'';position:absolute;top:24px;left:24px;right:24px;height:3px;background:#eef1f6;z-index:0}
 .jstop{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1;min-width:0}
-.jdot{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;margin-bottom:8px;border:3px solid #F4F4F4}
+.jdot{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin-bottom:8px;border:3px solid #F4F4F4;line-height:1;letter-spacing:-.2px}
 .jpct{font-size:15px;font-weight:800;color:#354062}
-.jname{font-size:10px;font-weight:700;color:#354062;margin-top:2px;line-height:1.3}
+.jname{font-size:10.5px;font-weight:700;color:#354062;margin-top:2px;line-height:1.3}
 .jskill{font-size:9px;color:#9aa4b8;margin-top:2px;line-height:1.3;padding:0 2px}
 .jstop.outlier{flex:0 0 auto;width:64px;margin-left:6px}
-.jstop.outlier .jdot{width:38px;height:38px;font-size:14px}
+.jstop.outlier .jdot{width:44px;height:44px;font-size:11px}
 
 .empty{font-size:12px;color:#9aa4b8;text-align:center;padding:20px 8px}
 .access-line{font-size:11px;color:#9aa4b8;margin-bottom:16px;padding-left:2px}
@@ -226,6 +226,18 @@ a{color:#5EA6B8}a:hover{color:#354062}
       </div>
     </div>
 
+    <div class="panel" data-panel="guidance" hidden>
+      <div class="intro-line" data-t="guidance_draft_note"></div>
+      <div class="card">
+        <div class="ct" data-t="lbl_reading"></div>
+        <div id="guidance-reading"></div>
+      </div>
+      <div class="card">
+        <div class="ct" data-t="lbl_arithmetic"></div>
+        <div id="guidance-arith"></div>
+      </div>
+    </div>
+
     <div class="panel" data-panel="insights" hidden>
       <div class="card" id="pub-insights-card"><div class="empty" data-t="insights_loading"></div></div>
     </div>
@@ -282,23 +294,24 @@ const T = {
   sw: {
     hdr_sub: 'Maendeleo ya Kujifunza — Kibaha',
     tab_overview: '🏠 Muhtasari', tab_trends: '📈 Mwenendo', tab_schools: '🏫 Shule',
-    tab_insights: '🧠 Maarifa', tab_programme: '📊 Programu', tab_dq: '✅ Ubora wa Takwimu',
-    tab_team_insights: '🧠 Maarifa ya Ndani',
-    intro_overview: 'Kila mtoto anapitia <b>hatua nne</b> za kujifunza mwaka mzima — kutoka <b>Anaanza</b> hadi <b>Amefikia Kiwango</b>. Lengo la programu ni kila mtoto kufika ukurasa wa mwisho katika darasa lake.',
+    tab_insights: '🧠 Uchambuzi', tab_programme: '📊 Programu', tab_dq: '✅ Ubora wa Takwimu',
+    tab_team_insights: '🧠 Uchambuzi wa Ndani', tab_guidance: '📘 Mwongozo wa Ualimu',
+    intro_overview: 'Kila mtoto anapitia <b>hatua nne</b> za kujifunza mwaka mzima — kutoka <b>Wanaoanza</b> hadi <b>Waliofikia Kiwango</b>. Lengo la programu ni kila mtoto kufika hatua ya mwisho katika darasa lake.',
     ct_journey: 'Safari ya Kujifunza', ct_by_grade: 'kwa darasa',
     ct_skill_breakdown: 'Ustadi kwa Kina', ct_trend_reading: 'Usomaji — Amefikia Kiwango+',
     ct_trend_arith: 'Hesabu — Amefikia Kiwango+', ct_trend_sub: 'Msingi → Katikati → Mwisho',
     ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Wanaosonga Haraka', ct_rising_sub: 'ongezeko kubwa, Msingi → Katikati',
     ct_rounds: 'Raundi za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
     ct_enumerators: 'Uwasilishaji kwa Mtahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
-    kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Amefikia Kiwango',
-    kpi_arith: 'Hesabu — Amefikia Kiwango', of_schools: 'kati ya shule 10',
+    kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Waliofikia Kiwango',
+    kpi_arith: 'Hesabu — Waliofikia Kiwango', of_schools: 'kati ya shule 10',
     lbl_baseline: 'Msingi', lbl_midline: 'Katikati', lbl_endline: 'Mwisho', lbl_grade: 'Darasa',
     lbl_reading: 'Usomaji', lbl_arithmetic: 'Hesabu', lbl_change: 'Mabadiliko', lbl_skill: 'Ustadi',
+    lbl_school: 'Shule', lbl_enumerator: 'Mtahini',
     btn_district_report: 'Pakua Ripoti ya Wilaya (PDF)', btn_school_report: 'Ripoti ya Shule',
     team_access_line: '<b>Inaonekana kwa:</b> Waratibu · HQ · Uongozi — <b>haionyeshwi hapa:</b> majina ya wanafunzi, nambari pekee',
     lock_title: 'Ufikiaji wa Timu', lock_desc: 'Weka nenosiri kuona takwimu za ndani za programu.', lock_btn: 'Fungua',
-    status_live: 'HAI', status_connecting: 'INAUNGANISHA…', status_not_configured: 'HAIJAWEKWA', status_error: 'HITILAFU',
+    status_live: 'MUBASHARA', status_connecting: 'INAUNGANISHA…', status_not_configured: 'HAIJAWEKWA', status_error: 'HITILAFU',
     status_offline: 'NJE YA MTANDAO', last_synced: 'Ilisawazishwa mara ya mwisho',
     records: 'rekodi', foot: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
     ct_projection: 'Makadirio ya Mwisho', projection_note: 'Makadirio kwa kutumia mwenendo wa sasa — si uhakika.',
@@ -309,7 +322,8 @@ const T = {
     empty_no_data_row: 'Hakuna takwimu bado', vs_baseline: 'ikilinganishwa na Msingi',
     insights_loading: 'Bofya kitufe kuzalisha maarifa mapya.', insights_generate: '🧠 Zalisha Maarifa',
     insights_generating: 'Inazalisha…', insights_refreshed: 'Ilisasishwa',
-    ins_what_shows: 'Takwimu Zinaonyesha Nini', ins_whats_done: 'Kilichofanyika',
+    ins_what_shows: 'Takwimu Zinaonyesha Nini', ins_whats_done: 'Kilichofanyika', ins_what_next: 'Hatua Zinazofuata',
+    guidance_draft_note: '⚠️ Rasimu ya kwanza ya mwongozo — itaboreshwa. Hii inaonyesha mwelekeo wa jumla wa shughuli za kufundishia kwa kila kundi, kama zinavyokabidhiwa kwa walimu wakati wa ziara ya tathmini ya msingi.',
   },
   en: {
     hdr_sub: 'Kibaha Learning Progress',
@@ -327,6 +341,7 @@ const T = {
     kpi_arith: 'Arithmetic — On Track', of_schools: 'of 10 schools',
     lbl_baseline: 'Baseline', lbl_midline: 'Midline', lbl_endline: 'Endline', lbl_grade: 'Grade',
     lbl_reading: 'Reading', lbl_arithmetic: 'Arithmetic', lbl_change: 'Change', lbl_skill: 'Skill',
+    lbl_school: 'School', lbl_enumerator: 'Enumerator',
     btn_district_report: 'Download District Report (PDF)', btn_school_report: 'School Report',
     team_access_line: '<b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only',
     lock_title: 'Team Access', lock_desc: 'Enter the team passphrase to view internal programme data.', lock_btn: 'Unlock',
@@ -341,7 +356,8 @@ const T = {
     empty_no_data_row: 'No data yet', vs_baseline: 'vs Baseline',
     insights_loading: 'Click the button to generate fresh insights.', insights_generate: '🧠 Generate Insights',
     insights_generating: 'Generating…', insights_refreshed: 'Refreshed',
-    ins_what_shows: 'What the Data Shows', ins_whats_done: "What's Been Done",
+    ins_what_shows: 'What the Data Shows', ins_whats_done: "What's Been Done", ins_what_next: 'Next Steps',
+    guidance_draft_note: "⚠️ First draft guidance — will be refined. Shows the general direction of teaching activities for each group, the kind handed to teachers at the baseline visit.",
   },
 };
 
@@ -357,10 +373,10 @@ function bi(obj) {
 }
 
 const GROUP_NAMES = {
-  sw: ['Anaanza', 'Anachipukia', 'Anaendelea', 'Amefikia Kiwango'],
+  sw: ['Wanaoanza', 'Wanaochipukia', 'Wanaoendelea', 'Waliofikia Kiwango'],
   en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
 };
-const OUTLIER_NAME = { sw: 'Amevuka Kiwango', en: 'Beyond' };
+const OUTLIER_NAME = { sw: 'Waliovuka Kiwango', en: 'Beyond' };
 const READING_SKILL = {
   sw: ['bado hajasoma silabi', 'anasoma silabi', 'anasoma maneno', 'anasoma aya kwa ufasaha'],
   en: ['not yet reading syllables', 'reading syllables', 'reading words', 'reading a paragraph fluently'],
@@ -375,9 +391,53 @@ function roundLabel(r) { return t('lbl_' + r); }
 
 const TAB_DEFS = [
   { key: 'overview', team: false }, { key: 'trends', team: false }, { key: 'schools', team: false },
-  { key: 'insights', team: false }, { key: 'programme', team: true }, { key: 'dq', team: true },
-  { key: 'team-insights', team: true },
+  { key: 'guidance', team: false }, { key: 'insights', team: false },
+  { key: 'programme', team: true }, { key: 'dq', team: true }, { key: 'team-insights', team: true },
 ];
+
+// First-draft teacher guidance per group, grounded in TaRL Africa's
+// classroom methodology — handed to teachers at baseline visits and shown
+// here too so anyone can check what a group is working toward. Explicitly
+// a starting draft (flagged in the UI), meant to be corrected/replaced,
+// not final pedagogy text.
+const GUIDANCE = {
+  reading: [
+    {
+      sw: ['Fanya mazoezi ya sauti za herufi kila siku kwa dakika 10-15', 'Tumia kadi za herufi, au uandike herufi mchangani/ubaoni', 'Unganisha sauti mbili kuwa silabi rahisi (mf. b+a=ba)'],
+      en: ['Practice letter sounds daily for 10-15 minutes', 'Use letter cards, or write letters in sand/on the board', 'Blend two sounds into a simple syllable (e.g. b+a=ba)'],
+    },
+    {
+      sw: ['Soma silabi kwa sauti kubwa kila siku', 'Unganisha silabi mbili kuwa neno rahisi (mf. ba+ba=baba)', 'Cheza mchezo wa kupanga kadi za silabi kuwa maneno'],
+      en: ['Read syllables aloud every day', 'Combine two syllables into a simple word (e.g. ba+ba=baba)', 'Play a card game arranging syllables into words'],
+    },
+    {
+      sw: ['Soma orodha ya maneno kwa ufasaha kila siku', 'Soma sentensi fupi pamoja na mwenzake (jozi)', 'Eleza maana ya sentensi kwa maneno yake mwenyewe'],
+      en: ['Read a word list fluently every day', 'Read short sentences in pairs with a classmate', "Explain a sentence's meaning in their own words"],
+    },
+    {
+      sw: ['Soma aya na ujibu maswali ya ufahamu', 'Soma kwa sauti mbele ya darasa au kikundi', 'Mpe kazi ya ziada: kusoma hadithi fupi kwa kujitegemea'],
+      en: ['Read a paragraph and answer comprehension questions', 'Read aloud to the class or a small group', 'Give extension work: reading a short story independently'],
+    },
+  ],
+  arithmetic: [
+    {
+      sw: ['Hesabu vitu halisi kila siku (mawe, maharage, vidole)', 'Tambua namba 1-9 kwa kadi au kwenye ubao'],
+      en: ['Count real objects daily (stones, beans, fingers)', 'Recognize numbers 1-9 using cards or the board'],
+    },
+    {
+      sw: ['Tambua namba 1-99, panga kwa mpangilio', 'Linganisha namba mbili — ipi kubwa, ipi ndogo'],
+      en: ['Recognize numbers 1-99, arrange them in order', 'Compare two numbers — which is bigger, which is smaller'],
+    },
+    {
+      sw: ['Fanya mazoezi ya kujumlisha kila siku, kuanzia vitu halisi kisha namba', 'Tatua matatizo rahisi ya maneno yanayohusu kujumlisha'],
+      en: ['Practice addition daily, starting with real objects then numbers', 'Solve simple word problems involving addition'],
+    },
+    {
+      sw: ['Fanya mazoezi ya kutoa, ikiwemo kukopa namba', 'Changanya kujumlisha na kutoa katika matatizo ya maneno'],
+      en: ['Practice subtraction, including borrowing', 'Combine addition and subtraction in word problems'],
+    },
+  ],
+};
 
 // Not real security — a light gate matching the stakeholders-survey
 // pattern, meant to keep casual visitors out of internal views, not to
@@ -607,7 +667,7 @@ function renderProgramme() {
     });
   });
   document.getElementById('school-grade-tbl').innerHTML =
-    `<tr><th>${t('tab_schools').replace('🏫 ', '')}</th><th>${t('lbl_grade')}</th><th>n</th><th>${t('lbl_reading')}</th><th>${t('lbl_arithmetic')}</th></tr>` +
+    `<tr><th>${t('lbl_school')}</th><th>${t('lbl_grade')}</th><th>n</th><th>${t('lbl_reading')}</th><th>${t('lbl_arithmetic')}</th></tr>` +
     (rows.join('') || `<tr><td colspan="5" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_no_data_row')}</td></tr>`);
 }
 
@@ -622,7 +682,7 @@ function renderDQ() {
   const rows = Object.entries(DATA.dq.enumerator_totals).sort((a, b) => b[1] - a[1])
     .map(([name, n]) => `<tr><td>${name}</td><td>${n}</td></tr>`).join('');
   document.getElementById('enumerator-tbl').innerHTML =
-    `<tr><th>${t('ct_enumerators').replace('Uwasilishaji kwa Mtahini', 'Enumerator')}</th><th>n</th></tr>` +
+    `<tr><th>${t('lbl_enumerator')}</th><th>n</th></tr>` +
     (rows || `<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_enum')}</td></tr>`);
 }
 
@@ -649,6 +709,10 @@ function insightBlockHtml(block, isPublic, which) {
   }
   if (isPublic && block.whats_been_done) {
     html += `<div class="ins-rec"><div class="ins-rec-lbl">${t('ins_whats_done')}</div>${bi(block.whats_been_done)}</div>`;
+  }
+  if (isPublic && block.what_schools_can_do && block.what_schools_can_do.length) {
+    html += `<div class="ins-sec">${t('ins_what_next')}</div>`;
+    block.what_schools_can_do.forEach(it => { html += `<div class="ins-bullet">→ ${bi(it)}</div>`; });
   }
   if (!isPublic && block.recommendation) {
     html += `<div class="ins-rec">${bi(block.recommendation)}</div>`;
@@ -708,12 +772,29 @@ async function triggerInsights() {
   renderInsights();
 }
 
+function guidanceHtml(subject) {
+  const names = GROUP_NAMES[LANG];
+  return GUIDANCE[subject].map((level, i) => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="width:10px;height:10px;border-radius:3px;background:${LEVEL_COLORS[i]};flex-shrink:0"></span>
+        <span style="font-size:12px;font-weight:800;color:#354062">${names[i]}</span>
+      </div>
+      ${level[LANG].map(item => `<div class="ins-bullet">→ ${item}</div>`).join('')}
+    </div>`).join('');
+}
+function renderGuidance() {
+  document.getElementById('guidance-reading').innerHTML = guidanceHtml('reading');
+  document.getElementById('guidance-arith').innerHTML = guidanceHtml('arithmetic');
+}
+
 function renderAll() {
   buildNav();
   applyStaticText();
   renderOverview();
   renderTrends();
   renderSchools();
+  renderGuidance();
   renderProgramme();
   renderDQ();
   renderInsights();

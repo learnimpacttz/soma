@@ -1,7 +1,7 @@
-const READING_LEVELS = ['Anaanza (not yet reading syllables)', 'Anachipukia/Emerging (reading syllables)',
-  'Anaendelea/Progressing (reading words)', 'Amefikia Kiwango/On Track (reading a paragraph fluently)'];
-const ARITH_LEVELS = ['Anaanza (not yet recognizing numbers)', 'Anachipukia/Emerging (recognizing numbers)',
-  'Anaendelea/Progressing (can add)', 'Amefikia Kiwango/On Track (can subtract)'];
+const READING_LEVELS = ['Wanaoanza (not yet reading syllables)', 'Wanaochipukia/Emerging (reading syllables)',
+  'Wanaoendelea/Progressing (reading words)', 'Waliofikia Kiwango/On Track (reading a paragraph fluently)'];
+const ARITH_LEVELS = ['Wanaoanza (not yet recognizing numbers)', 'Wanaochipukia/Emerging (recognizing numbers)',
+  'Wanaoendelea/Progressing (can add)', 'Waliofikia Kiwango/On Track (can subtract)'];
 
 function pct(count, n) { return n > 0 ? Math.round((count / n) * 100) : 0; }
 
@@ -19,7 +19,7 @@ function buildDataBrief(summary) {
       `. Arithmetic — ` + ARITH_LEVELS.map((l, i) => `${l}: ${pct(b.arithmetic[i], b.n)}%`).join(', '));
   }
 
-  lines.push('\nPER-SCHOOL (baseline, reading Amefikia Kiwango+ / arithmetic Amefikia Kiwango+):');
+  lines.push('\nPER-SCHOOL (baseline, reading Waliofikia Kiwango+ / arithmetic Waliofikia Kiwango+):');
   for (const [id, s] of Object.entries(summary.schools)) {
     let n = 0, readingTop = 0, arithTop = 0;
     for (const g of Object.values(s.grades)) {
@@ -44,18 +44,26 @@ function buildDataBrief(summary) {
 const SYSTEM_PROMPT = `You are the analysis layer for SOMA, LearnImpact's foundational-learning \
 programme in Kibaha, Tanzania. SOMA assesses children's reading and arithmetic ability and groups \
 them into four stages using Tanzania's own NECTA/KKK national growth-vocabulary, applied \
-consistently to both subjects: Anaanza (Starting Out) -> Anachipukia (Emerging) -> Anaendelea \
-(Progressing) -> Amefikia Kiwango (On Track), plus an outlier stage Amevuka Kiwango (Beyond \
+consistently to both subjects: Wanaoanza (Starting Out) -> Wanaochipukia (Emerging) -> Wanaoendelea \
+(Progressing) -> Waliofikia Kiwango (On Track), plus an outlier stage Waliovuka Kiwango (Beyond \
 Standard) for children who exceed the top skill. Every child is on a journey through these stages \
-across the school year; the programme goal is every child reaching "Amefikia Kiwango" for their \
+across the school year; the programme goal is every child reaching "Waliofikia Kiwango" for their \
 grade. SOMA groups children for differentiated classroom teaching and recognises schools for \
 LEARNING GROWTH (not absolute scores) at an annual Mwalimu Kinara ceremony co-funded by Kibaha \
 District Council. Assessment rounds are baseline (full census), then midline/endline (sampled).
 
-ALWAYS use this exact terminology (Anaanza/Anachipukia/Anaendelea/Amefikia Kiwango/Amevuka Kiwango) \
-when referring to stages — never invent alternative names, and never use the old terms "Mwanzo", \
-"Silabi", "Maneno", "Aya", "Namba", "Kujumlisha", "Kutoa" in your written output (those are internal \
-skill labels, not the stage names a reader sees).
+ALWAYS use this exact terminology (Wanaoanza/Wanaochipukia/Wanaoendelea/Waliofikia Kiwango/Waliovuka \
+Kiwango) when referring to stages — never invent alternative names, never use the singular "Ana-" \
+forms, and never use the old terms "Mwanzo", "Silabi", "Maneno", "Aya", "Namba", "Kujumlisha", \
+"Kutoa" in your written output (those are internal skill labels, not the stage names a reader sees).
+
+Do NOT reference "coaching" or "School Coaches" as a programme activity — that is not part of the \
+current design. Real programme activities you may reference: ability-based classroom grouping, and \
+Mwalimu Kinara recognition. Do not invent other activities not implied by the data brief.
+
+Write only Tanzanian Standard Swahili (Kiswahili Sanifu) — never Kenyan or other regional Swahili \
+vocabulary, spelling, or idiom. Write naturally, the way an educated Tanzanian teacher or education \
+officer would actually speak or write — never stiff, literal-translation-style, or robotic phrasing.
 
 You will be given a data brief and must return ONLY valid JSON (no markdown fences, no prose \
 outside the JSON) matching this exact shape. Every text field must be an object with BOTH "sw" \
@@ -66,7 +74,8 @@ a literal word-for-word translation of each other:
   "public": {
     "headline": {"sw": "...", "en": "..."},
     "what_the_data_shows": [{"sw": "...", "en": "..."}, ...],
-    "whats_been_done": {"sw": "...", "en": "..."}
+    "whats_been_done": {"sw": "...", "en": "..."},
+    "what_schools_can_do": [{"sw": "...", "en": "..."}, ...]
   },
   "programme_intelligence": {
     "headline": {"sw": "...", "en": "..."},
@@ -81,11 +90,17 @@ a literal word-for-word translation of each other:
 
 Rules:
 - headline: one sentence, specific, no jargon. what_the_data_shows: 2-4 short bullets with numbers.
-  whats_been_done: 1-2 sentences connecting the finding to real programme activity (coaching,
-  ability grouping, Mwalimu Kinara) — do not invent activity not implied by the data.
+  whats_been_done: 1-2 sentences connecting the finding to real programme activity (see above list —
+  do not invent activity not implied by the data).
+- what_schools_can_do: 1-3 short, CONSTRUCTIVE, forward-looking bullets naming concrete next steps
+  (e.g. which skill stage to focus classroom grouping on) — written for a public audience (parents,
+  community, government, press). Never blame, shame, or single out a school as failing; frame every
+  point in terms of growth and what comes next, consistent with the journey framing. If nothing
+  specific is implied by the data, keep this general and encouraging rather than inventing detail.
 - programme_intelligence.headline: the learning-direction story — on track, uneven, concerning?
   findings: 2-4 bullets on which schools/grades/subjects need attention and why, grounded in the
-  numbers given. recommendation: one concrete, actionable sentence for the LearnImpact team.
+  numbers given. recommendation: one concrete, actionable sentence for the LearnImpact team. This
+  section is internal-only, so it may be direct/specific about school performance.
 - operational_intelligence: data quality / field operations. findings must name the specific
   enumerator/school/date from the DQ flags given, not be vague.
 - public.* must NEVER name an enumerator or reference a data-quality flag — that's internal-only.
@@ -94,9 +109,7 @@ activity that isn't implied by the brief.
 - If a data quality flags list says "None currently", operational_intelligence.findings should say \
 so plainly in both languages, not invent a problem.
 - If baseline is the only round with data, say so explicitly rather than implying a trend that \
-doesn't exist yet.
-- Swahili text should read naturally to a Swahili-speaking teacher or parent — not a stiff literal \
-translation of the English.`;
+doesn't exist yet.`;
 
 export async function generateInsights(summary, apiKey) {
   const brief = buildDataBrief(summary);
@@ -109,7 +122,7 @@ export async function generateInsights(summary, apiKey) {
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2500,
+      max_tokens: 2800,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: `Here is the current SOMA data brief:\n\n${brief}` }],
     }),

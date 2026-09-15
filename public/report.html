@@ -34,6 +34,13 @@ td{padding:6px 8px;border-bottom:1px solid #eef1f6}
 .jpct{font-size:15px;font-weight:800;color:#354062}
 .jname{font-size:8.5px;font-weight:700;margin-top:2px}
 .rfoot{margin-top:26px;padding-top:12px;border-top:1px solid #eef1f6;font-size:9px;color:#b7bfd0;text-align:center}
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 10px;gap:16px}
+.spinner{width:36px;height:36px;border:4px solid #eef1f6;border-top-color:#5EA6B8;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:12.5px;color:#7c869c;font-weight:600}
+.loading-bar{width:180px;height:5px;background:#eef1f6;border-radius:3px;overflow:hidden}
+.loading-bar-fill{height:100%;width:40%;background:#5EA6B8;border-radius:3px;animation:loadbar 1.1s ease-in-out infinite}
+@keyframes loadbar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
 @media print{ body{background:#fff} .toolbar{display:none} .page{box-shadow:none;margin:0;max-width:none;padding:0} }
 </style>
 </head>
@@ -43,7 +50,7 @@ td{padding:6px 8px;border-bottom:1px solid #eef1f6}
     <a class="toolbar-back" href="/" id="tb-back">← <span id="tb-back-label">Dashboard</span></a>
     <div class="toolbar-t" id="tb-title">SOMA Report</div>
   </div>
-  <button class="toolbar-btn" onclick="window.print()" id="tb-btn">🖨️ Print / Save as PDF</button>
+  <button class="toolbar-btn" onclick="window.print()" id="tb-btn" disabled style="opacity:.5;cursor:not-allowed">🖨️ Print / Save as PDF</button>
 </div>
 <div class="page" id="page">
   <div class="rhdr">
@@ -53,12 +60,18 @@ td{padding:6px 8px;border-bottom:1px solid #eef1f6}
       <img id="qr-img" width="62" height="62" alt="QR" style="border:1px solid #eef1f6;border-radius:4px">
     </div>
   </div>
-  <div id="content">Loading…</div>
+  <div id="content">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      <div class="loading-txt" id="loading-txt">Inatengeneza ripoti…</div>
+    </div>
+  </div>
   <div class="rfoot" id="rfoot">LearnImpact · SOMA Programme</div>
 </div>
 <script>
 const GROUP_NAMES = {
-  sw: ['Anaanza', 'Anachipukia', 'Anaendelea', 'Amefikia Kiwango'],
+  sw: ['Wanaoanza', 'Wanaochipukia', 'Wanaoendelea', 'Waliofikia Kiwango'],
   en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
 };
 const LEVEL_COLORS = ['#BE6243', '#FFC650', '#5EA6B8', '#354062'];
@@ -75,6 +88,7 @@ const STR = LANG === 'en' ? {
   skill_breakdown: 'Skill Breakdown', baseline: 'Baseline', now: 'Latest', change: 'Change',
   footer: 'LearnImpact · SOMA Programme · Kibaha District & Municipal Councils',
   no_data: 'No data available yet.', trend: 'Trend Since Baseline', back: 'Dashboard',
+  loading: 'Generating your report…',
 } : {
   title_school: 'Ripoti ya Shule', title_district: 'Ripoti ya Wilaya',
   generated: 'Imetengenezwa', round: 'Raundi', students: 'Watoto Waliopimwa',
@@ -83,6 +97,7 @@ const STR = LANG === 'en' ? {
   skill_breakdown: 'Ustadi kwa Kina', baseline: 'Msingi', now: 'Sasa', change: 'Mabadiliko',
   footer: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
   no_data: 'Hakuna takwimu bado.', trend: 'Mwenendo Tangu Msingi', back: 'Dashibodi',
+  loading: 'Inatengeneza ripoti yako…',
 };
 
 function pct(c, n) { return n > 0 ? Math.round((c / n) * 100) : 0; }
@@ -100,6 +115,7 @@ async function build() {
   document.documentElement.lang = LANG;
   document.getElementById('tb-back-label').textContent = STR.back;
   document.getElementById('tb-back').href = `/?lang=${LANG}`;
+  document.getElementById('loading-txt').textContent = STR.loading;
   const res = await fetch('/api/summary');
   const d = await res.json();
   const now = new Date().toLocaleDateString(LANG === 'sw' ? 'sw-TZ' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -152,6 +168,10 @@ async function build() {
     document.getElementById('content').innerHTML = html;
   }
   document.getElementById('rfoot').textContent = STR.footer;
+  const btn = document.getElementById('tb-btn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
 }
 build();
 </script>
