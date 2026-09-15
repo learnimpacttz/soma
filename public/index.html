@@ -212,6 +212,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
         <div class="ct"><span data-t="ct_trend_arith"></span> <span class="ct-sub" data-t="ct_trend_sub"></span></div>
         <div class="trend-row" id="trend-arith"></div>
       </div>
+      <div class="intro-line" id="trend-note" hidden data-t="projection_note"></div>
     </div>
 
     <div class="panel" data-panel="schools" hidden>
@@ -298,7 +299,10 @@ const T = {
     team_access_line: '<b>Inaonekana kwa:</b> Waratibu · HQ · Uongozi — <b>haionyeshwi hapa:</b> majina ya wanafunzi, nambari pekee',
     lock_title: 'Ufikiaji wa Timu', lock_desc: 'Weka nenosiri kuona takwimu za ndani za programu.', lock_btn: 'Fungua',
     status_live: 'HAI', status_connecting: 'INAUNGANISHA…', status_not_configured: 'HAIJAWEKWA', status_error: 'HITILAFU',
+    status_offline: 'NJE YA MTANDAO', last_synced: 'Ilisawazishwa mara ya mwisho',
     records: 'rekodi', foot: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
+    ct_projection: 'Makadirio ya Mwisho', projection_note: 'Makadirio kwa kutumia mwenendo wa sasa — si uhakika.',
+    voice_listen: '🔊 Sikiliza', voice_stop: '⏸️ Simamisha',
     empty_no_data: 'Hakuna takwimu bado kwa raundi hii.', empty_no_grade: 'Hakuna takwimu za kutosha kwa darasa hili bado.',
     empty_no_schools: 'Hakuna takwimu za shule bado.', empty_rising: 'Inahitaji raundi ya Msingi na Katikati kuonyesha ongezeko.',
     empty_flags: 'Hakuna vibendera — ubora wa takwimu uko sawa.', empty_enum: 'Hakuna uwasilishaji bado',
@@ -327,7 +331,10 @@ const T = {
     team_access_line: '<b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only',
     lock_title: 'Team Access', lock_desc: 'Enter the team passphrase to view internal programme data.', lock_btn: 'Unlock',
     status_live: 'LIVE', status_connecting: 'CONNECTING…', status_not_configured: 'NOT CONFIGURED', status_error: 'ERROR',
+    status_offline: 'OFFLINE', last_synced: 'Last synced',
     records: 'records', foot: 'LearnImpact · SOMA Programme · Kibaha District & Municipal Councils',
+    ct_projection: 'Projected Endline', projection_note: 'Estimated from the current trend — not a guarantee.',
+    voice_listen: '🔊 Listen', voice_stop: '⏸️ Stop',
     empty_no_data: 'No data yet for this round.', empty_no_grade: 'Not enough data yet for this grade.',
     empty_no_schools: 'No school data yet.', empty_rising: 'Needs both a Baseline and a Midline round to show gains.',
     empty_flags: 'No flags — data quality looks clean.', empty_enum: 'No submissions yet',
@@ -503,22 +510,46 @@ function renderSkillBreakdown() {
   el.innerHTML = html;
 }
 
+// Simple linear extrapolation: if baseline->midline gained N points, project
+// midline->endline gains N more, clamped to [0,100]. Explicitly labeled as
+// an estimate, not a forecast — deliberately not more sophisticated than
+// that given how few rounds/how much small-sample noise exists this early
+// (see the sampling-protocol precision-ceiling finding from earlier work).
+function projectedEndline(overall, field) {
+  const b = overall.baseline, m = overall.midline, e = overall.endline;
+  if (e?.n) return null; // real endline data exists, no need to project
+  if (!b?.n || !m?.n) return null;
+  const bp = pct(b[field][3], b.n), mp = pct(m[field][3], m.n);
+  return Math.max(0, Math.min(100, mp + (mp - bp)));
+}
+
 function renderTrends() {
   const overall = DATA.overall;
   const maxH = 90;
   function bars(field) {
     const vals = ROUNDS.map(r => overall[r].n ? pct(overall[r][field][3], overall[r].n) : null);
-    const max = Math.max(...vals.filter(v => v != null), 1);
-    return ROUNDS.map((r, i) => {
+    const projected = projectedEndline(overall, field);
+    const allVals = vals.filter(v => v != null).concat(projected != null ? [projected] : []);
+    const max = Math.max(...allVals, 1);
+    let html = ROUNDS.map((r, i) => {
       const v = vals[i];
       const h = v == null ? 4 : Math.max(4, (v / max) * maxH);
       return `<div class="trend-bar-wrap"><div class="trend-val">${v == null ? '—' : v + '%'}</div>
         <div class="trend-bar" style="height:${h}px;background:${v == null ? '#e8ecf3' : '#5EA6B8'}"></div>
         <div class="trend-lbl">${roundLabel(r)}</div></div>`;
     }).join('');
+    if (projected != null) {
+      const h = Math.max(4, (projected / max) * maxH);
+      html += `<div class="trend-bar-wrap"><div class="trend-val">~${Math.round(projected)}%</div>
+        <div class="trend-bar" style="height:${h}px;background:repeating-linear-gradient(45deg,#FFC650,#FFC650 4px,#fff3d6 4px,#fff3d6 8px);border:1px dashed #d9a53d"></div>
+        <div class="trend-lbl">${t('ct_projection')}</div></div>`;
+    }
+    return html;
   }
   document.getElementById('trend-reading').innerHTML = bars('reading');
   document.getElementById('trend-arith').innerHTML = bars('arithmetic');
+  const hasProjection = projectedEndline(overall, 'reading') != null || projectedEndline(overall, 'arithmetic') != null;
+  document.getElementById('trend-note').hidden = !hasProjection;
 }
 
 function renderSchools() {
@@ -595,7 +626,20 @@ function renderDQ() {
     (rows || `<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_enum')}</td></tr>`);
 }
 
-function insightBlockHtml(block, isPublic) {
+function blockSpeakText(block, isPublic) {
+  if (!block) return '';
+  let parts = [bi(block.headline)];
+  const items = isPublic ? block.what_the_data_shows : block.findings;
+  if (items) parts = parts.concat(items.map(bi));
+  if (isPublic && block.whats_been_done) parts.push(bi(block.whats_been_done));
+  if (!isPublic && block.recommendation) parts.push(bi(block.recommendation));
+  return parts.filter(Boolean).join('. ');
+}
+
+const SPEECH_SUPPORTED = 'speechSynthesis' in window;
+let speakingWhich = null;
+
+function insightBlockHtml(block, isPublic, which) {
   if (!block) return `<div class="empty">${t('insights_loading')}</div>`;
   let html = `<div class="ins-headline">${bi(block.headline)}</div>`;
   const items = isPublic ? block.what_the_data_shows : block.findings;
@@ -609,7 +653,32 @@ function insightBlockHtml(block, isPublic) {
   if (!isPublic && block.recommendation) {
     html += `<div class="ins-rec">${bi(block.recommendation)}</div>`;
   }
+  if (SPEECH_SUPPORTED) {
+    html += `<div style="margin-top:10px"><button class="report-btn voice-btn" data-which="${which}" onclick="speakBlock('${which}')">${speakingWhich === which ? t('voice_stop') : t('voice_listen')}</button></div>`;
+  }
   return html;
+}
+
+function speakBlock(which) {
+  if (!SPEECH_SUPPORTED) return;
+  if (speakingWhich === which) { speechSynthesis.cancel(); speakingWhich = null; renderInsights(); return; }
+  speechSynthesis.cancel();
+  const block = which === 'public' ? INSIGHTS?.public : which === 'programme' ? INSIGHTS?.programme_intelligence : INSIGHTS?.operational_intelligence;
+  const text = blockSpeakText(block, which === 'public');
+  if (!text) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = LANG === 'sw' ? 'sw-TZ' : 'en-US';
+  // Best-effort match to an installed Swahili/English voice — not every
+  // device ships one (varies by OS/skin), so this degrades to whatever
+  // default voice the browser has rather than failing silently.
+  const voices = speechSynthesis.getVoices();
+  const match = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(LANG === 'sw' ? 'sw' : 'en'));
+  if (match) u.voice = match;
+  u.onend = () => { speakingWhich = null; renderInsights(); };
+  u.onerror = () => { speakingWhich = null; renderInsights(); };
+  speakingWhich = which;
+  speechSynthesis.speak(u);
+  document.querySelectorAll('.voice-btn').forEach(b => { b.textContent = b.dataset.which === which ? t('voice_stop') : t('voice_listen'); });
 }
 
 function renderInsights() {
@@ -623,9 +692,9 @@ function renderInsights() {
     opEl.innerHTML = `<div class="empty">${t('insights_loading')}</div>`;
     return;
   }
-  pubEl.innerHTML = insightBlockHtml(INSIGHTS.public, true) + `<div style="text-align:center;margin-top:12px">${btnHtml}</div>`;
-  progEl.innerHTML = insightBlockHtml(INSIGHTS.programme_intelligence, false);
-  opEl.innerHTML = insightBlockHtml(INSIGHTS.operational_intelligence, false);
+  pubEl.innerHTML = insightBlockHtml(INSIGHTS.public, true, 'public') + `<div style="text-align:center;margin-top:12px">${btnHtml}</div>`;
+  progEl.innerHTML = insightBlockHtml(INSIGHTS.programme_intelligence, false, 'programme');
+  opEl.innerHTML = insightBlockHtml(INSIGHTS.operational_intelligence, false, 'operational');
 }
 
 async function triggerInsights() {
@@ -703,16 +772,34 @@ function openReport(kind, schoolId) {
 }
 
 /* ============================== Load data ============================== */
+function timeAgo(iso) {
+  if (!iso) return '';
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return LANG === 'sw' ? 'sasa hivi' : 'just now';
+  if (mins < 60) return `${mins}${LANG === 'sw' ? ' dak' : 'm'}`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}${LANG === 'sw' ? ' saa' : 'h'}`;
+  return `${Math.round(hrs / 24)}${LANG === 'sw' ? ' siku' : 'd'}`;
+}
+
 async function load() {
   applyStaticText();
   try {
     const res = await fetch('/api/summary');
+    const fromCache = res.headers.get('X-Soma-Cache') === 'hit';
     DATA = await res.json();
     const badge = document.getElementById('status-badge');
     if (DATA.status === 'ok') {
-      badge.textContent = `${t('status_live')} · ${DATA.total_records} ${t('records')}`;
-      badge.className = 'badge live';
+      if (fromCache) {
+        badge.textContent = `📴 ${t('status_offline')} · ${t('last_synced')} ${timeAgo(DATA.fetched_at)}`;
+        badge.className = 'badge team';
+      } else {
+        badge.textContent = `${t('status_live')} · ${DATA.total_records} ${t('records')}`;
+        badge.className = 'badge live';
+      }
       renderAll();
+    } else if (DATA.status === 'offline_no_cache') {
+      badge.textContent = `📴 ${t('status_offline')}`; badge.className = 'badge team';
     } else if (DATA.status === 'pending_first_fetch') {
       badge.textContent = t('status_connecting'); badge.className = 'badge team';
     } else {

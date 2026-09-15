@@ -42,7 +42,10 @@ td{padding:6px 8px;border-bottom:1px solid #eef1f6}
 <div class="page" id="page">
   <div class="rhdr">
     <div><div class="brand">SOMA</div><div class="sub" id="hsub">Kibaha Learning Progress</div></div>
-    <div class="meta" id="hmeta"></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="meta" id="hmeta"></div>
+      <img id="qr-img" width="62" height="62" alt="QR" style="border:1px solid #eef1f6;border-radius:4px">
+    </div>
   </div>
   <div id="content">Loading…</div>
   <div class="rfoot" id="rfoot">LearnImpact · SOMA Programme</div>
@@ -92,7 +95,12 @@ async function build() {
   const res = await fetch('/api/summary');
   const d = await res.json();
   const now = new Date().toLocaleDateString(LANG === 'sw' ? 'sw-TZ' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
-  document.getElementById('hmeta').textContent = `${STR.generated}: ${now}`;
+  document.getElementById('hmeta').innerHTML = `${STR.generated}: ${now}<br><span style="font-size:8.5px">${LANG === 'sw' ? 'Changanua kwa dashibodi hai' : 'Scan for live dashboard'}</span>`;
+  // QR generated via a public, no-key encoding service at report-build time
+  // only — the printed image itself has no ongoing dependency on it once
+  // generated; scanning it later is just reading the encoded URL.
+  const dashboardUrl = `${location.origin}/?lang=${LANG}`;
+  document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=0&data=${encodeURIComponent(dashboardUrl)}`;
 
   if (TYPE === 'school') {
     const s = d.schools[SCHOOL_ID];
