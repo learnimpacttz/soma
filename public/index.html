@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="sw">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
@@ -15,64 +15,87 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F4F4F4;color:#354062;min-height:100vh}
 a{color:#5EA6B8}a:hover{color:#354062}
-.hdr{background:#354062;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;-webkit-user-select:none;user-select:none}
+
+/* ---------- Shell: mobile-first, desktop via sidebar at wide viewports ---------- */
+.shell{display:flex;min-height:100vh}
+.side{display:none}
+.mainwrap{flex:1;min-width:0}
+
+.hdr{background:#354062;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;-webkit-user-select:none;user-select:none}
 .hdr-t{font-size:16px;font-weight:800;letter-spacing:.3px}
 .hdr-s{font-size:10px;opacity:.65;margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.lang-toggle{display:flex;background:rgba(255,255,255,.12);border-radius:20px;padding:2px;flex-shrink:0}
+.lang-btn{border:none;background:transparent;color:rgba(255,255,255,.6);font-size:11px;font-weight:700;padding:5px 10px;border-radius:18px;cursor:pointer}
+.lang-btn.on{background:#FFC650;color:#354062}
 .badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;white-space:nowrap;flex-shrink:0}
 .badge.live{background:#5EA6B8;color:#fff}
 .badge.team{background:#BE6243;color:#fff;cursor:pointer}
+
 .tabs{background:#2a3350;display:flex;overflow-x:auto;position:sticky;top:0;z-index:5}
 .tab{flex-shrink:0;padding:12px 14px;font-size:12px;font-weight:600;color:rgba(255,255,255,.5);border-bottom:3px solid transparent;white-space:nowrap;cursor:pointer;display:flex;align-items:center;gap:5px}
 .tab.on{color:#FFC650;border-bottom-color:#FFC650}
 .tab[hidden]{display:none}
+
 .panel{max-width:600px;margin:0 auto;padding:14px}
 .panel[hidden]{display:none}
+
+.intro-line{font-size:12px;color:#5a6478;line-height:1.6;background:#fff;border-radius:10px;padding:13px 15px;margin-bottom:14px;box-shadow:0 1px 4px rgba(53,64,98,.10)}
+.intro-line b{color:#354062}
+
 .kg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
 @media(min-width:480px){.kg{grid-template-columns:repeat(4,1fr)}}
 .kc{background:#fff;border-radius:10px;padding:13px 12px;box-shadow:0 1px 4px rgba(53,64,98,.10)}
 .kl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#94a0b8}
 .kv{font-size:25px;font-weight:800;color:#354062;line-height:1.1;margin:3px 0 2px}
 .ks{font-size:10px;color:#b7bfd0}
+
 .card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(53,64,98,.10);margin-bottom:14px}
 .ct{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#354062;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
 .ct-sub{font-weight:400;text-transform:none;font-size:10px;color:#b7bfd0}
+
 .gpills{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .gpill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:14px;background:#eef1f6;color:#7c869c;cursor:pointer;border:none}
 .gpill.on{background:#354062;color:#fff}
-.subj-label{font-size:11px;font-weight:700;color:#5a6478;margin-bottom:6px;margin-top:14px}
+
+.subj-label{font-size:11px;font-weight:700;color:#5a6478;margin-bottom:8px;margin-top:16px}
 .subj-label:first-child{margin-top:0}
-.stackbar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin-bottom:8px;background:#eef1f6}
-.seg{display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
-.lgi{display:flex;align-items:center;gap:5px;font-size:10px;color:#5a6478}
-.dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
-.skill-tbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:4px}
-.skill-tbl th{text-align:left;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;color:#9aa4b8;font-weight:700;padding:0 0 7px;border-bottom:1px solid #eef1f6}
-.skill-tbl th.num{text-align:right}
-.skill-tbl td{padding:8px 0;border-bottom:1px solid #f5f6f9;color:#3d4658}
-.skill-tbl td.num{text-align:right;font-weight:700;color:#354062}
-.skill-tbl tr:last-child td{border-bottom:none}
-.skill-name{display:flex;align-items:center;gap:7px}
+
+/* ---------- Journey path (replaces the old stacked-percentage bar) ---------- */
+.journey{display:flex;align-items:flex-start;position:relative;padding:6px 2px 2px}
+.journey::before{content:'';position:absolute;top:24px;left:24px;right:24px;height:3px;background:#eef1f6;z-index:0}
+.jstop{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1;min-width:0}
+.jdot{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;margin-bottom:8px;border:3px solid #F4F4F4}
+.jpct{font-size:15px;font-weight:800;color:#354062}
+.jname{font-size:10px;font-weight:700;color:#354062;margin-top:2px;line-height:1.3}
+.jskill{font-size:9px;color:#9aa4b8;margin-top:2px;line-height:1.3;padding:0 2px}
+.jstop.outlier{flex:0 0 auto;width:64px;margin-left:6px}
+.jstop.outlier .jdot{width:38px;height:38px;font-size:14px}
+
+.empty{font-size:12px;color:#9aa4b8;text-align:center;padding:20px 8px}
+.access-line{font-size:11px;color:#9aa4b8;margin-bottom:16px;padding-left:2px}
+.access-line b{color:#5a6478;font-weight:600}
+
 .school-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
 .school-row:last-child{border-bottom:none}
 .school-name{font-size:12px;font-weight:700;color:#354062;flex:1;min-width:0}
 .school-ward{font-size:9px;color:#b7bfd0;font-weight:400}
 .mini-bar{width:80px;height:8px;border-radius:4px;overflow:hidden;display:flex;flex-shrink:0;background:#eef1f6}
-.trend-row{display:flex;align-items:flex-end;gap:14px;height:120px;padding:0 4px}
-.trend-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
-.trend-bar{width:100%;max-width:34px;border-radius:5px 5px 0 0;background:#eef1f6;min-height:2px}
-.trend-lbl{font-size:9px;color:#b7bfd0;font-weight:600}
-.trend-val{font-size:10px;color:#354062;font-weight:700}
+
 .rise-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f5f6f9}
-.rise-item:last-child{border-bottom:none}
+.rise-item:last-child{margin-bottom:0;border-bottom:none}
 .rise-rank{width:26px;height:26px;border-radius:50%;background:#354062;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
 .rise-rank.gold{background:#FFC650;color:#354062}
 .rise-gain{margin-left:auto;text-align:right}
 .rise-gain-v{font-size:15px;font-weight:800;color:#2d6a7d}
 .rise-gain-l{font-size:9px;color:#b7bfd0}
-.empty{font-size:12px;color:#9aa4b8;text-align:center;padding:20px 8px}
-.access-line{font-size:11px;color:#9aa4b8;margin-bottom:16px;padding-left:2px}
-.access-line b{color:#5a6478;font-weight:600}
+
+.trend-row{display:flex;align-items:flex-end;gap:14px;height:120px;padding:0 4px}
+.trend-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1}
+.trend-bar{width:100%;max-width:34px;border-radius:5px 5px 0 0;background:#eef1f6;min-height:2px}
+.trend-lbl{font-size:9px;color:#b7bfd0;font-weight:600}
+.trend-val{font-size:10px;color:#354062;font-weight:700}
+
 .flag-item{border-left:3px solid #BE6243;background:#FBEFEC;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:8px}
 .flag-item.med{border-left-color:#FFC650;background:#FFF9EE}
 .flag-item:last-child{margin-bottom:0}
@@ -80,19 +103,27 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .flag-item.med .flag-sev{background:#FFC650;color:#354062}
 .flag-msg{font-size:11.5px;color:#8a3f2b;line-height:1.45}
 .flag-item.med .flag-msg{color:#8a6d1f}
+
 .tbl{width:100%;border-collapse:collapse;font-size:10.5px}
 .tbl th{background:#354062;color:#fff;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
 .tbl td{padding:7px 8px;border-bottom:1px solid #f0f0f0;color:#3d4658}
 .tbl-wrap{overflow-x:auto;border-radius:0 0 8px 8px;margin:0 -16px -16px;padding:0 16px 4px}
-.foot{font-size:10px;color:#c3cadb;text-align:center;padding:10px 0 26px}
-.ins-card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 4px rgba(53,64,98,.10);margin-bottom:14px}
+
 .ins-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#5EA6B8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
 .ins-headline{font-size:15px;font-weight:800;color:#354062;line-height:1.4;margin-bottom:4px}
-.ins-ts{font-size:10px;color:#b7bfd0;margin-bottom:16px}
 .ins-sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#354062;margin:16px 0 8px}
 .ins-bullet{display:flex;gap:8px;margin-bottom:8px;font-size:12.5px;color:#3d4658;line-height:1.55}
-.ins-rec{background:#EDF4F6;border-left:3px solid #5EA6B8;padding:10px 12px;border-radius:0 6px 6px 0;font-size:12.5px;color:#354062;margin-top:6px;line-height:1.55}
-.ins-gen-btn{font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;background:#354062;color:#fff;border:none;cursor:pointer}
+.ins-rec{background:#EDF4F6;border-radius:8px;padding:11px 13px;margin-top:10px}
+.ins-rec-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#5EA6B8;margin-bottom:5px}
+.ins-btn{background:#354062;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer}
+.ins-btn:disabled{opacity:.5}
+
+.report-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.report-btn{background:#fff;border:1px solid #dde2ec;color:#354062;border-radius:8px;padding:9px 14px;font-size:11.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+.report-btn:hover{border-color:#5EA6B8}
+
+.foot{font-size:10px;color:#c3cadb;text-align:center;padding:10px 0 26px}
+
 #lock-overlay{position:fixed;inset:0;background:rgba(53,64,98,.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 #lock-overlay[hidden]{display:none}
 .lock-box{background:#fff;border-radius:12px;padding:24px;max-width:320px;width:100%;text-align:center}
@@ -101,121 +132,238 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .lock-box input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;text-align:center;margin-bottom:10px}
 .lock-box button{width:100%;padding:10px;border:none;border-radius:8px;background:#354062;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
 .lock-err{font-size:11px;color:#BE6243;margin-top:8px;min-height:14px}
+
+/* ---------- Desktop layout ---------- */
+@media(min-width:900px){
+  .side{display:flex;flex-direction:column;width:230px;flex-shrink:0;background:#354062;padding:22px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .side-brand{padding:0 22px 18px;color:#fff}
+  .side-brand .t{font-size:20px;font-weight:800}
+  .side-brand .s{font-size:10px;opacity:.6;margin-top:3px}
+  .side-lang{display:flex;gap:4px;padding:0 22px 18px}
+  .side .lang-btn{flex:1;padding:6px;font-size:10px}
+  .side-nav{padding:0 10px}
+  .side-item{display:flex;align-items:center;gap:10px;padding:11px 12px;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);border-radius:8px;cursor:pointer;margin-bottom:2px}
+  .side-item.on{color:#FFC650;background:rgba(255,255,255,.06)}
+  .side-item[hidden]{display:none}
+  .side-lock{margin-top:auto;padding:14px 22px 0}
+  .hdr{display:none}
+  .tabs{display:none}
+  .mainwrap{max-width:none}
+  .panel{max-width:1100px;padding:28px}
+  .kg{grid-template-columns:repeat(4,1fr)}
+  .two-col{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:start}
+  .two-col .card{margin-bottom:18px}
+}
 </style>
 </head>
 <body>
 
-<div class="hdr" id="hdr-tap-zone">
-  <div>
-    <div class="hdr-t">SOMA</div>
-    <div class="hdr-s">Kibaha Learning Progress</div>
+<div class="shell">
+  <div class="side">
+    <div class="side-brand"><div class="t">SOMA</div><div class="s" data-t="hdr_sub">Maendeleo ya Kujifunza — Kibaha</div></div>
+    <div class="side-lang">
+      <button class="lang-btn" data-lang="sw">SW</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+    </div>
+    <div class="side-nav" id="side-nav"></div>
+    <div class="side-lock"><span class="badge team" id="team-badge-side">🔒 Team</span></div>
   </div>
-  <span class="badge live" id="status-badge">LOADING…</span>
-</div>
 
-<div class="tabs" id="tabbar">
-  <div class="tab on" data-tab="overview">🏠 Overview</div>
-  <div class="tab" data-tab="trends">📈 Trends</div>
-  <div class="tab" data-tab="schools">🏫 Schools</div>
-  <div class="tab" data-tab="insights">🧠 Insights</div>
-  <div class="tab" data-tab="programme" hidden data-team="1">📊 Programme</div>
-  <div class="tab" data-tab="dq" hidden data-team="1">✅ Data Quality</div>
-  <div class="tab" data-tab="insights-team" hidden data-team="1">🧠 Team Insights</div>
-  <span class="badge team" id="team-badge" style="margin-left:auto;align-self:center">🔒 Team</span>
-</div>
+  <div class="mainwrap">
+    <div class="hdr" id="hdr-tap-zone">
+      <div>
+        <div class="hdr-t">SOMA</div>
+        <div class="hdr-s" data-t="hdr_sub">Maendeleo ya Kujifunza — Kibaha</div>
+      </div>
+      <div class="hdr-right">
+        <div class="lang-toggle">
+          <button class="lang-btn" data-lang="sw">SW</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <span class="badge live" id="status-badge">…</span>
+      </div>
+    </div>
 
-<!-- OVERVIEW -->
-<div class="panel on" data-panel="overview">
-  <div class="kg" id="ov-kpis"></div>
-  <div class="card">
-    <div class="ct">Where Kibaha Stands <span class="ct-sub" id="ov-round-lbl"></span></div>
-    <div id="ov-stackbars"></div>
-  </div>
-  <div class="card">
-    <div class="ct">Skill Breakdown <span class="ct-sub">by grade</span></div>
-    <div class="gpills" id="grade-pills"></div>
-    <div id="skill-breakdown"></div>
+    <div class="tabs" id="tabbar"></div>
+
+    <div class="panel on" data-panel="overview">
+      <div class="intro-line" data-t="intro_overview"></div>
+      <div class="kg" id="ov-kpis"></div>
+      <div class="report-btns">
+        <button class="report-btn" onclick="openReport('district')">📄 <span data-t="btn_district_report"></span></button>
+      </div>
+      <div class="card">
+        <div class="ct"><span data-t="ct_journey"></span> <span class="ct-sub" id="ov-round-lbl"></span></div>
+        <div id="ov-journey"></div>
+      </div>
+      <div class="card">
+        <div class="ct"><span data-t="ct_skill_breakdown"></span> <span class="ct-sub" data-t="ct_by_grade"></span></div>
+        <div class="gpills" id="grade-pills"></div>
+        <div id="skill-breakdown"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="trends" hidden>
+      <div class="card">
+        <div class="ct"><span data-t="ct_trend_reading"></span> <span class="ct-sub" data-t="ct_trend_sub"></span></div>
+        <div class="trend-row" id="trend-reading"></div>
+      </div>
+      <div class="card">
+        <div class="ct"><span data-t="ct_trend_arith"></span> <span class="ct-sub" data-t="ct_trend_sub"></span></div>
+        <div class="trend-row" id="trend-arith"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="schools" hidden>
+      <div class="card">
+        <div class="ct"><span data-t="ct_compare"></span> <span class="ct-sub" id="sc-round-lbl"></span></div>
+        <div id="school-compare"></div>
+      </div>
+      <div class="card">
+        <div class="ct">🌟 <span data-t="ct_rising"></span> <span class="ct-sub" data-t="ct_rising_sub"></span></div>
+        <div id="rising-fast"></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="insights" hidden>
+      <div class="card" id="pub-insights-card"><div class="empty" data-t="insights_loading"></div></div>
+    </div>
+
+    <div class="panel" data-panel="programme" hidden>
+      <div class="access-line" data-t="team_access_line"></div>
+      <div class="report-btns">
+        <button class="report-btn" onclick="openReport('district')">📄 <span data-t="btn_district_report"></span></button>
+      </div>
+      <div class="card">
+        <div class="ct" data-t="ct_rounds"></div>
+        <div class="trend-row" id="round-progress"></div>
+      </div>
+      <div class="card">
+        <div class="ct" data-t="ct_school_grade"></div>
+        <div class="tbl-wrap"><table class="tbl" id="school-grade-tbl"></table></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="dq" hidden>
+      <div class="card">
+        <div class="ct" data-t="ct_flags"></div>
+        <div id="dq-flags"></div>
+      </div>
+      <div class="card">
+        <div class="ct" data-t="ct_enumerators"></div>
+        <div class="tbl-wrap"><table class="tbl" id="enumerator-tbl"></table></div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="team-insights" hidden>
+      <div class="access-line" data-t="team_access_line"></div>
+      <div class="card"><div class="ct">🎯 <span data-t="ct_programme_intel"></span></div><div id="prog-intel"></div></div>
+      <div class="card"><div class="ct">⚙️ <span data-t="ct_operational_intel"></span></div><div id="op-intel"></div></div>
+    </div>
+
+    <div class="foot" data-t="foot"></div>
   </div>
 </div>
-
-<!-- TRENDS -->
-<div class="panel" data-panel="trends" hidden>
-  <div class="card">
-    <div class="ct">Reading — % at Aya+ <span class="ct-sub">baseline → midline → endline</span></div>
-    <div class="trend-row" id="trend-reading"></div>
-  </div>
-  <div class="card">
-    <div class="ct">Arithmetic — % at Kutoa+ <span class="ct-sub">baseline → midline → endline</span></div>
-    <div class="trend-row" id="trend-arith"></div>
-  </div>
-</div>
-
-<!-- SCHOOLS -->
-<div class="panel" data-panel="schools" hidden>
-  <div class="card">
-    <div class="ct">How Schools Compare <span class="ct-sub" id="sc-round-lbl"></span></div>
-    <div id="school-compare"></div>
-  </div>
-  <div class="card">
-    <div class="ct">🌟 Rising Fast <span class="ct-sub">biggest gains, baseline → midline</span></div>
-    <div id="rising-fast"></div>
-  </div>
-</div>
-
-<!-- INSIGHTS (public) -->
-<div class="panel" data-panel="insights" hidden>
-  <div id="insights-public"></div>
-</div>
-
-<!-- INSIGHTS (team) -->
-<div class="panel" data-panel="insights-team" hidden>
-  <div class="access-line"><b>Visible to:</b> Coordinators · HQ · Leadership</div>
-  <div id="insights-team"></div>
-</div>
-
-<!-- PROGRAMME (team) -->
-<div class="panel" data-panel="programme" hidden>
-  <div class="access-line"><b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only</div>
-  <div class="card">
-    <div class="ct">Assessment Rounds</div>
-    <div class="trend-row" id="round-progress"></div>
-  </div>
-  <div class="card">
-    <div class="ct">School × Grade Detail</div>
-    <div class="tbl-wrap"><table class="tbl" id="school-grade-tbl"></table></div>
-  </div>
-</div>
-
-<!-- DATA QUALITY (team) -->
-<div class="panel" data-panel="dq" hidden>
-  <div class="card">
-    <div class="ct">Flags Needing Attention</div>
-    <div id="dq-flags"></div>
-  </div>
-  <div class="card">
-    <div class="ct">Submissions by Enumerator</div>
-    <div class="tbl-wrap"><table class="tbl" id="enumerator-tbl"></table></div>
-  </div>
-</div>
-
-<div class="foot">LearnImpact · SOMA Programme · Kibaha District &amp; Municipal Councils</div>
 
 <div id="lock-overlay" hidden>
   <div class="lock-box">
-    <h3>🔒 Team Access</h3>
-    <p>Enter the team passphrase to view internal programme data.</p>
+    <h3>🔒 <span data-t="lock_title"></span></h3>
+    <p data-t="lock_desc"></p>
     <input type="password" id="lock-input" placeholder="Passphrase" inputmode="text">
-    <button id="lock-submit">Unlock</button>
+    <button id="lock-submit" data-t="lock_btn"></button>
     <div class="lock-err" id="lock-err"></div>
   </div>
 </div>
 
 <script>
-const READING_LABELS = ['Mwanzo','Silabi','Maneno','Aya'];
-const ARITH_LABELS = ['Mwanzo','Namba','Kujumlisha','Kutoa'];
-const LEVEL_COLORS = ['#D8E6EA','#5EA6B8','#3d7a8a','#354062'];
-const ROUNDS = ['baseline','midline','endline'];
-const ROUND_LABELS = { baseline:'Baseline', midline:'Midline', endline:'Endline' };
+/* ============================== i18n ============================== */
+const T = {
+  sw: {
+    hdr_sub: 'Maendeleo ya Kujifunza — Kibaha',
+    tab_overview: '🏠 Muhtasari', tab_trends: '📈 Mwenendo', tab_schools: '🏫 Shule',
+    tab_insights: '🧠 Maarifa', tab_programme: '📊 Programu', tab_dq: '✅ Ubora wa Takwimu',
+    tab_team_insights: '🧠 Maarifa ya Ndani',
+    intro_overview: 'Kila mtoto anapitia <b>hatua nne</b> za kujifunza mwaka mzima — kutoka <b>Anaanza</b> hadi <b>Amefikia Kiwango</b>. Lengo la programu ni kila mtoto kufika ukurasa wa mwisho katika darasa lake.',
+    ct_journey: 'Safari ya Kujifunza', ct_by_grade: 'kwa darasa',
+    ct_skill_breakdown: 'Ustadi kwa Kina', ct_trend_reading: 'Usomaji — Amefikia Kiwango+',
+    ct_trend_arith: 'Hesabu — Amefikia Kiwango+', ct_trend_sub: 'Msingi → Katikati → Mwisho',
+    ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Wanaosonga Haraka', ct_rising_sub: 'ongezeko kubwa, Msingi → Katikati',
+    ct_rounds: 'Raundi za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
+    ct_enumerators: 'Uwasilishaji kwa Mtahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
+    kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Amefikia Kiwango',
+    kpi_arith: 'Hesabu — Amefikia Kiwango', of_schools: 'kati ya shule 10',
+    lbl_baseline: 'Msingi', lbl_midline: 'Katikati', lbl_endline: 'Mwisho', lbl_grade: 'Darasa',
+    lbl_reading: 'Usomaji', lbl_arithmetic: 'Hesabu', lbl_change: 'Mabadiliko', lbl_skill: 'Ustadi',
+    btn_district_report: 'Pakua Ripoti ya Wilaya (PDF)', btn_school_report: 'Ripoti ya Shule',
+    team_access_line: '<b>Inaonekana kwa:</b> Waratibu · HQ · Uongozi — <b>haionyeshwi hapa:</b> majina ya wanafunzi, nambari pekee',
+    lock_title: 'Ufikiaji wa Timu', lock_desc: 'Weka nenosiri kuona takwimu za ndani za programu.', lock_btn: 'Fungua',
+    status_live: 'HAI', status_connecting: 'INAUNGANISHA…', status_not_configured: 'HAIJAWEKWA', status_error: 'HITILAFU',
+    records: 'rekodi', foot: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
+    empty_no_data: 'Hakuna takwimu bado kwa raundi hii.', empty_no_grade: 'Hakuna takwimu za kutosha kwa darasa hili bado.',
+    empty_no_schools: 'Hakuna takwimu za shule bado.', empty_rising: 'Inahitaji raundi ya Msingi na Katikati kuonyesha ongezeko.',
+    empty_flags: 'Hakuna vibendera — ubora wa takwimu uko sawa.', empty_enum: 'Hakuna uwasilishaji bado',
+    empty_no_data_row: 'Hakuna takwimu bado', vs_baseline: 'ikilinganishwa na Msingi',
+    insights_loading: 'Bofya kitufe kuzalisha maarifa mapya.', insights_generate: '🧠 Zalisha Maarifa',
+    insights_generating: 'Inazalisha…', insights_refreshed: 'Ilisasishwa',
+    ins_what_shows: 'Takwimu Zinaonyesha Nini', ins_whats_done: 'Kilichofanyika',
+  },
+  en: {
+    hdr_sub: 'Kibaha Learning Progress',
+    tab_overview: '🏠 Overview', tab_trends: '📈 Trends', tab_schools: '🏫 Schools',
+    tab_insights: '🧠 Insights', tab_programme: '📊 Programme', tab_dq: '✅ Data Quality',
+    tab_team_insights: '🧠 Team Insights',
+    intro_overview: 'Every child moves through <b>four stages</b> of learning across the year — from <b>Starting Out</b> to <b>On Track</b>. The programme\'s goal is every child reaching the final stage for their grade.',
+    ct_journey: 'Learning Journey', ct_by_grade: 'by grade',
+    ct_skill_breakdown: 'Skill Breakdown', ct_trend_reading: 'Reading — On Track+',
+    ct_trend_arith: 'Arithmetic — On Track+', ct_trend_sub: 'Baseline → Midline → Endline',
+    ct_compare: 'How Schools Compare', ct_rising: 'Rising Fast', ct_rising_sub: 'biggest gains, Baseline → Midline',
+    ct_rounds: 'Assessment Rounds', ct_school_grade: 'School × Grade', ct_flags: 'Flags Needing Attention',
+    ct_enumerators: 'Submissions by Enumerator', ct_programme_intel: 'Programme Intelligence', ct_operational_intel: 'Operational Intelligence',
+    kpi_students: 'Students Assessed', kpi_schools: 'Schools Reporting', kpi_reading: 'Reading — On Track',
+    kpi_arith: 'Arithmetic — On Track', of_schools: 'of 10 schools',
+    lbl_baseline: 'Baseline', lbl_midline: 'Midline', lbl_endline: 'Endline', lbl_grade: 'Grade',
+    lbl_reading: 'Reading', lbl_arithmetic: 'Arithmetic', lbl_change: 'Change', lbl_skill: 'Skill',
+    btn_district_report: 'Download District Report (PDF)', btn_school_report: 'School Report',
+    team_access_line: '<b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only',
+    lock_title: 'Team Access', lock_desc: 'Enter the team passphrase to view internal programme data.', lock_btn: 'Unlock',
+    status_live: 'LIVE', status_connecting: 'CONNECTING…', status_not_configured: 'NOT CONFIGURED', status_error: 'ERROR',
+    records: 'records', foot: 'LearnImpact · SOMA Programme · Kibaha District & Municipal Councils',
+    empty_no_data: 'No data yet for this round.', empty_no_grade: 'Not enough data yet for this grade.',
+    empty_no_schools: 'No school data yet.', empty_rising: 'Needs both a Baseline and a Midline round to show gains.',
+    empty_flags: 'No flags — data quality looks clean.', empty_enum: 'No submissions yet',
+    empty_no_data_row: 'No data yet', vs_baseline: 'vs Baseline',
+    insights_loading: 'Click the button to generate fresh insights.', insights_generate: '🧠 Generate Insights',
+    insights_generating: 'Generating…', insights_refreshed: 'Refreshed',
+    ins_what_shows: 'What the Data Shows', ins_whats_done: "What's Been Done",
+  },
+};
+
+let LANG = localStorage.getItem('soma_lang') || 'sw';
+function t(key) { return (T[LANG] && T[LANG][key]) || (T.sw[key] || key); }
+function bi(obj) { return obj ? (obj[LANG] || obj.sw || obj.en || '') : ''; }
+
+const GROUP_NAMES = {
+  sw: ['Anaanza', 'Anachipukia', 'Anaendelea', 'Amefikia Kiwango'],
+  en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
+};
+const OUTLIER_NAME = { sw: 'Amevuka Kiwango', en: 'Beyond' };
+const READING_SKILL = {
+  sw: ['bado hajasoma silabi', 'anasoma silabi', 'anasoma maneno', 'anasoma aya kwa ufasaha'],
+  en: ['not yet reading syllables', 'reading syllables', 'reading words', 'reading a paragraph fluently'],
+};
+const ARITH_SKILL = {
+  sw: ['bado hajatambua namba', 'anatambua namba', 'anajumlisha', 'anatoa'],
+  en: ['not yet recognizing numbers', 'recognizing numbers', 'can add', 'can subtract'],
+};
+const LEVEL_COLORS = ['#BE6243', '#FFC650', '#5EA6B8', '#354062'];
+const ROUNDS = ['baseline', 'midline', 'endline'];
+function roundLabel(r) { return t('lbl_' + r); }
+
+const TAB_DEFS = [
+  { key: 'overview', team: false }, { key: 'trends', team: false }, { key: 'schools', team: false },
+  { key: 'insights', team: false }, { key: 'programme', team: true }, { key: 'dq', team: true },
+  { key: 'team-insights', team: true },
+];
 
 // Not real security — a light gate matching the stakeholders-survey
 // pattern, meant to keep casual visitors out of internal views, not to
@@ -223,29 +371,71 @@ const ROUND_LABELS = { baseline:'Baseline', midline:'Midline', endline:'Endline'
 const TEAM_PASSPHRASE = 'soma-kibaha-2026';
 
 let DATA = null;
+let INSIGHTS = null;
 let currentGrade = null;
-let currentRound = 'baseline';
+let currentTab = 'overview';
 
 function pct(count, n) { return n > 0 ? Math.round((count / n) * 100) : 0; }
 
 function bestAvailableRound(overall) {
-  for (const r of ['endline','midline','baseline']) {
+  for (const r of ['endline', 'midline', 'baseline']) {
     if (overall[r] && overall[r].n > 0) return r;
   }
   return 'baseline';
 }
 
-function stackbarHtml(counts, labels, n) {
-  if (!n) return '<div class="empty">No data yet for this round.</div>';
-  let bars = '<div class="stackbar">';
-  counts.forEach((c, i) => {
-    const p = pct(c, n);
-    if (p > 0) bars += `<div class="seg" style="width:${p}%;background:${LEVEL_COLORS[i]}${i===0?';color:#354062':''}">${p}%</div>`;
+/* ============================== Tabs / nav (built from TAB_DEFS so mobile tabbar + desktop sidebar stay in sync) ============================== */
+function buildNav() {
+  const tabbar = document.getElementById('tabbar');
+  const sidenav = document.getElementById('side-nav');
+  tabbar.innerHTML = ''; sidenav.innerHTML = '';
+  TAB_DEFS.forEach(({ key, team }) => {
+    const label = t('tab_' + key.replace('-', '_'));
+    const tabEl = document.createElement('div');
+    tabEl.className = 'tab' + (key === currentTab ? ' on' : '');
+    tabEl.dataset.tab = key;
+    if (team) tabEl.hidden = !isTeamUnlocked();
+    tabEl.textContent = label;
+    tabEl.onclick = () => switchTab(key);
+    tabbar.appendChild(tabEl);
+
+    const sideEl = document.createElement('div');
+    sideEl.className = 'side-item' + (key === currentTab ? ' on' : '');
+    sideEl.dataset.tab = key;
+    if (team) sideEl.hidden = !isTeamUnlocked();
+    sideEl.textContent = label;
+    sideEl.onclick = () => switchTab(key);
+    sidenav.appendChild(sideEl);
   });
-  bars += '</div>';
-  let legend = '<div class="legend">' + labels.map((l,i) =>
-    `<div class="lgi"><span class="dot" style="background:${LEVEL_COLORS[i]}"></span>${l}</div>`).join('') + '</div>';
-  return bars + legend;
+}
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab,.side-item').forEach(el => el.classList.toggle('on', el.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.hidden = p.dataset.panel !== name);
+}
+
+/* ============================== Static text (data-t elements) ============================== */
+function applyStaticText() {
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const key = el.dataset.t;
+    el.innerHTML = t(key);
+  });
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
+}
+
+/* ============================== Renderers ============================== */
+function journeyHtml(bucket, skillLabels) {
+  if (!bucket || !bucket.n) return `<div class="empty">${t('empty_no_data')}</div>`;
+  const names = GROUP_NAMES[LANG];
+  let html = '<div class="journey">';
+  for (let i = 0; i < 4; i++) {
+    const p = pct(bucket[i] ?? bucket.reading?.[i], bucket.n);
+    html += `<div class="jstop"><div class="jdot" style="background:${LEVEL_COLORS[i]}">${p}%</div>
+      <div class="jname">${names[i]}</div><div class="jskill">${skillLabels[LANG][i]}</div></div>`;
+  }
+  html += '</div>';
+  return html;
 }
 
 function renderOverview() {
@@ -255,15 +445,16 @@ function renderOverview() {
   const current = overall[round];
 
   document.getElementById('ov-kpis').innerHTML = `
-    <div class="kc"><div class="kl">Students Assessed</div><div class="kv">${current.n}</div><div class="ks">${ROUND_LABELS[round]}</div></div>
-    <div class="kc"><div class="kl">Schools Reporting</div><div class="kv">${Object.keys(DATA.schools).length}</div><div class="ks">of 10 schools</div></div>
-    <div class="kc"><div class="kl">Reading at Aya+</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round!=='baseline' ? 'vs '+pct(baseline.reading[3],baseline.n)+'% baseline' : 'baseline'}</div></div>
-    <div class="kc"><div class="kl">Arithmetic at Kutoa+</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round!=='baseline' ? 'vs '+pct(baseline.arithmetic[3],baseline.n)+'% baseline' : 'baseline'}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_students')}</div><div class="kv">${current.n}</div><div class="ks">${roundLabel(round)}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_schools')}</div><div class="kv">${Object.keys(DATA.schools).length}</div><div class="ks">${t('of_schools')}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_reading')}</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round !== 'baseline' ? pct(baseline.reading[3], baseline.n) + '% ' + t('vs_baseline') : roundLabel('baseline')}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_arith')}</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round !== 'baseline' ? pct(baseline.arithmetic[3], baseline.n) + '% ' + t('vs_baseline') : roundLabel('baseline')}</div></div>
   `;
-  document.getElementById('ov-round-lbl').textContent = ROUND_LABELS[round];
-  document.getElementById('ov-stackbars').innerHTML =
-    '<div class="subj-label">Reading</div>' + stackbarHtml(current.reading, READING_LABELS, current.n) +
-    '<div class="subj-label">Arithmetic</div>' + stackbarHtml(current.arithmetic, ARITH_LABELS, current.n);
+  document.getElementById('ov-round-lbl').textContent = roundLabel(round);
+
+  document.getElementById('ov-journey').innerHTML =
+    `<div class="subj-label">${t('lbl_reading')}</div>${journeyHtml(current.reading.reduce((o, v, i) => (o[i] = v, o), { n: current.n }), READING_SKILL)}` +
+    `<div class="subj-label">${t('lbl_arithmetic')}</div>${journeyHtml(current.arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: current.n }), ARITH_SKILL)}`;
 
   renderGradePills();
   renderSkillBreakdown();
@@ -273,33 +464,34 @@ function renderGradePills() {
   const grades = Object.keys(DATA.by_grade).filter(g => g !== 'unknown').sort();
   if (!currentGrade || !grades.includes(currentGrade)) currentGrade = grades[0] || null;
   document.getElementById('grade-pills').innerHTML = grades.map(g =>
-    `<button class="gpill ${g===currentGrade?'on':''}" data-grade="${g}">Darasa ${g}</button>`
-  ).join('') || '<div class="empty">No grade data yet.</div>';
+    `<button class="gpill ${g === currentGrade ? 'on' : ''}" data-grade="${g}">${t('lbl_grade')} ${g}</button>`
+  ).join('') || `<div class="empty">${t('empty_no_grade')}</div>`;
   document.querySelectorAll('.gpill').forEach(btn => {
     btn.onclick = () => { currentGrade = btn.dataset.grade; renderGradePills(); renderSkillBreakdown(); };
   });
 }
 
-function skillRow(label, base, now, colorIdx) {
+function skillRow(label, base, now) {
   if (base == null || now == null) return '';
   const delta = now - base;
   const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
   const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : '';
-  return `<tr><td><div class="skill-name"><span class="dot" style="background:${LEVEL_COLORS[colorIdx]}"></span>${label}</div></td>
-    <td class="num">${base}%</td><td class="num">${now}%</td>
-    <td class="num"><span style="font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:8px;background:${cls==='up'?'#EDF4F6':cls==='down'?'#F4F0EC':'#f4f4f4'};color:${cls==='up'?'#2d6a7d':'#8a8478'}">${arrow} ${Math.abs(delta)}</span></td></tr>`;
+  return `<tr><td>${label}</td>
+    <td class="num" style="text-align:right">${base}%</td><td class="num" style="text-align:right;font-weight:700">${now}%</td>
+    <td class="num" style="text-align:right"><span style="font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:8px;background:${cls === 'up' ? '#EDF4F6' : cls === 'down' ? '#F4F0EC' : '#f4f4f4'};color:${cls === 'up' ? '#2d6a7d' : '#8a8478'}">${arrow} ${Math.abs(delta)}</span></td></tr>`;
 }
 
 function renderSkillBreakdown() {
   const el = document.getElementById('skill-breakdown');
   const g = DATA.by_grade[currentGrade];
-  if (!g || !g.baseline.n) { el.innerHTML = '<div class="empty">Not enough data yet for this grade.</div>'; return; }
+  if (!g || !g.baseline.n) { el.innerHTML = `<div class="empty">${t('empty_no_grade')}</div>`; return; }
   const round = bestAvailableRound(g);
   const base = g.baseline, now = g[round];
-  let html = `<div class="subj-label">Reading</div><table class="skill-tbl"><tr><th>Skill</th><th class="num">Baseline</th><th class="num">${ROUND_LABELS[round]}</th><th class="num">Change</th></tr>`;
-  READING_LABELS.forEach((lbl, i) => { html += skillRow(lbl, pct(base.reading[i], base.n), pct(now.reading[i], now.n), i); });
-  html += '</table><div class="subj-label">Arithmetic</div><table class="skill-tbl"><tr><th>Skill</th><th class="num">Baseline</th><th class="num">'+ROUND_LABELS[round]+'</th><th class="num">Change</th></tr>';
-  ARITH_LABELS.forEach((lbl, i) => { html += skillRow(lbl, pct(base.arithmetic[i], base.n), pct(now.arithmetic[i], now.n), i); });
+  const names = GROUP_NAMES[LANG];
+  let html = `<div class="subj-label">${t('lbl_reading')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabel('baseline')}</th><th style="text-align:right">${roundLabel(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
+  names.forEach((lbl, i) => { html += skillRow(lbl, pct(base.reading[i], base.n), pct(now.reading[i], now.n)); });
+  html += `</table><div class="subj-label">${t('lbl_arithmetic')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabel('baseline')}</th><th style="text-align:right">${roundLabel(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
+  names.forEach((lbl, i) => { html += skillRow(lbl, pct(base.arithmetic[i], base.n), pct(now.arithmetic[i], now.n)); });
   html += '</table>';
   el.innerHTML = html;
 }
@@ -307,15 +499,15 @@ function renderSkillBreakdown() {
 function renderTrends() {
   const overall = DATA.overall;
   const maxH = 90;
-  function bars(field, idx) {
+  function bars(field) {
     const vals = ROUNDS.map(r => overall[r].n ? pct(overall[r][field][3], overall[r].n) : null);
     const max = Math.max(...vals.filter(v => v != null), 1);
     return ROUNDS.map((r, i) => {
       const v = vals[i];
       const h = v == null ? 4 : Math.max(4, (v / max) * maxH);
-      return `<div class="trend-bar-wrap"><div class="trend-val">${v==null?'—':v+'%'}</div>
-        <div class="trend-bar" style="height:${h}px;background:${v==null?'#e8ecf3':'#5EA6B8'}"></div>
-        <div class="trend-lbl">${ROUND_LABELS[r]}</div></div>`;
+      return `<div class="trend-bar-wrap"><div class="trend-val">${v == null ? '—' : v + '%'}</div>
+        <div class="trend-bar" style="height:${h}px;background:${v == null ? '#e8ecf3' : '#5EA6B8'}"></div>
+        <div class="trend-lbl">${roundLabel(r)}</div></div>`;
     }).join('');
   }
   document.getElementById('trend-reading').innerHTML = bars('reading');
@@ -324,7 +516,7 @@ function renderTrends() {
 
 function renderSchools() {
   const round = bestAvailableRound(DATA.overall);
-  document.getElementById('sc-round-lbl').textContent = `% at Aya+ (reading), ${ROUND_LABELS[round]}`;
+  document.getElementById('sc-round-lbl').textContent = `${roundLabel(round)}`;
   const rows = Object.entries(DATA.schools).map(([id, s]) => {
     let n = 0, correct = 0;
     Object.values(s.grades).forEach(g => { if (g[round]) { n += g[round].n; correct += g[round].reading[3]; } });
@@ -336,36 +528,36 @@ function renderSchools() {
       <div class="school-name">${s.name}<div class="school-ward">${s.ward || ''}</div></div>
       <div class="mini-bar"><div style="width:${s.pct}%;background:#354062"></div></div>
       <div style="font-size:12px;font-weight:800;color:#354062;width:34px;text-align:right">${s.pct}%</div>
-    </div>`).join('') : '<div class="empty">No school data yet.</div>';
+      <button class="report-btn" style="padding:5px 9px;font-size:10px" onclick="openReport('school','${s.id}')">📄</button>
+    </div>`).join('') : `<div class="empty">${t('empty_no_schools')}</div>`;
 
-  // Rising Fast — biggest baseline -> midline gain per school
   const gains = Object.entries(DATA.schools).map(([id, s]) => {
-    let bn=0,bc=0,mn=0,mc=0;
+    let bn = 0, bc = 0, mn = 0, mc = 0;
     Object.values(s.grades).forEach(g => {
-      if (g.baseline){bn+=g.baseline.n;bc+=g.baseline.reading[3];}
-      if (g.midline){mn+=g.midline.n;mc+=g.midline.reading[3];}
+      if (g.baseline) { bn += g.baseline.n; bc += g.baseline.reading[3]; }
+      if (g.midline) { mn += g.midline.n; mc += g.midline.reading[3]; }
     });
     if (!bn || !mn) return null;
-    return { name: s.name, ward: s.ward, gain: pct(mc,mn) - pct(bc,bn) };
-  }).filter(Boolean).sort((a,b) => b.gain - a.gain).slice(0,3);
+    return { name: s.name, ward: s.ward, gain: pct(mc, mn) - pct(bc, bn) };
+  }).filter(Boolean).sort((a, b) => b.gain - a.gain).slice(0, 3);
 
-  document.getElementById('rising-fast').innerHTML = gains.length ? gains.map((s,i) => `
+  document.getElementById('rising-fast').innerHTML = gains.length ? gains.map((s, i) => `
     <div class="rise-item">
-      <div class="rise-rank ${i===0?'gold':''}">${i+1}</div>
-      <div style="flex:1"><div style="font-size:12.5px;font-weight:700;color:#354062">${s.name}<span style="font-size:9.5px;color:#b7bfd0;font-weight:400"> · ${s.ward||''}</span></div></div>
-      <div class="rise-gain"><div class="rise-gain-v">${s.gain>=0?'+':''}${s.gain}</div><div class="rise-gain-l">points</div></div>
-    </div>`).join('') : '<div class="empty">Needs both a baseline and a midline round to show gains.</div>';
+      <div class="rise-rank ${i === 0 ? 'gold' : ''}">${i + 1}</div>
+      <div style="flex:1"><div style="font-size:12.5px;font-weight:700;color:#354062">${s.name}<span style="font-size:9.5px;color:#b7bfd0;font-weight:400"> · ${s.ward || ''}</span></div></div>
+      <div class="rise-gain"><div class="rise-gain-v">${s.gain >= 0 ? '+' : ''}${s.gain}</div><div class="rise-gain-l">pts</div></div>
+    </div>`).join('') : `<div class="empty">${t('empty_rising')}</div>`;
 }
 
 function renderProgramme() {
   const overall = DATA.overall;
-  const target = Math.max(1, ...ROUNDS.map(r => overall[r].n)); // rough scale until real targets are wired in
+  const target = Math.max(1, ...ROUNDS.map(r => overall[r].n));
   document.getElementById('round-progress').innerHTML = ROUNDS.map(r => {
     const n = overall[r].n;
     const h = Math.max(4, (n / target) * 90);
     return `<div class="trend-bar-wrap"><div class="trend-val">${n}</div>
-      <div class="trend-bar" style="height:${h}px;background:${n?'#354062':'#e8ecf3'}"></div>
-      <div class="trend-lbl">${ROUND_LABELS[r]}</div></div>`;
+      <div class="trend-bar" style="height:${h}px;background:${n ? '#354062' : '#e8ecf3'}"></div>
+      <div class="trend-lbl">${roundLabel(r)}</div></div>`;
   }).join('');
 
   const rows = [];
@@ -373,130 +565,102 @@ function renderProgramme() {
     Object.entries(s.grades).forEach(([g, rs]) => {
       const round = bestAvailableRound(rs);
       if (!rs[round].n) return;
-      rows.push(`<tr><td>${s.name}</td><td>Darasa ${g}</td><td>${rs[round].n}</td><td>${pct(rs[round].reading[3],rs[round].n)}%</td><td>${pct(rs[round].arithmetic[3],rs[round].n)}%</td></tr>`);
+      rows.push(`<tr><td>${s.name}</td><td>${t('lbl_grade')} ${g}</td><td>${rs[round].n}</td><td>${pct(rs[round].reading[3], rs[round].n)}%</td><td>${pct(rs[round].arithmetic[3], rs[round].n)}%</td></tr>`);
     });
   });
   document.getElementById('school-grade-tbl').innerHTML =
-    '<tr><th>School</th><th>Grade</th><th>Tested</th><th>Aya+</th><th>Kutoa+</th></tr>' +
-    (rows.join('') || '<tr><td colspan="5" style="text-align:center;color:#9aa4b8;padding:14px">No data yet</td></tr>');
+    `<tr><th>${t('tab_schools').replace('🏫 ', '')}</th><th>${t('lbl_grade')}</th><th>n</th><th>${t('lbl_reading')}</th><th>${t('lbl_arithmetic')}</th></tr>` +
+    (rows.join('') || `<tr><td colspan="5" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_no_data_row')}</td></tr>`);
 }
 
 function renderDQ() {
   const flags = DATA.dq.flags;
   document.getElementById('dq-flags').innerHTML = flags.length ? flags.map(f => `
-    <div class="flag-item ${f.severity==='med'?'med':''}">
+    <div class="flag-item ${f.severity === 'med' ? 'med' : ''}">
       <span class="flag-sev">${f.severity}</span>
       <div class="flag-msg">${f.message}</div>
-    </div>`).join('') : '<div class="empty">No flags — data quality looks clean.</div>';
+    </div>`).join('') : `<div class="empty">${t('empty_flags')}</div>`;
 
-  const rows = Object.entries(DATA.dq.enumerator_totals).sort((a,b) => b[1]-a[1])
+  const rows = Object.entries(DATA.dq.enumerator_totals).sort((a, b) => b[1] - a[1])
     .map(([name, n]) => `<tr><td>${name}</td><td>${n}</td></tr>`).join('');
   document.getElementById('enumerator-tbl').innerHTML =
-    '<tr><th>Enumerator</th><th>Submissions</th></tr>' +
-    (rows || '<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">No submissions yet</td></tr>');
+    `<tr><th>${t('ct_enumerators').replace('Uwasilishaji kwa Mtahini', 'Enumerator')}</th><th>n</th></tr>` +
+    (rows || `<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_enum')}</td></tr>`);
 }
 
-let INSIGHTS = null;
-
-function bulletsHtml(arr) {
-  return (arr || []).map(b => `<div class="ins-bullet">→ ${b}</div>`).join('');
+function insightBlockHtml(block, isPublic) {
+  if (!block) return `<div class="empty">${t('insights_loading')}</div>`;
+  let html = `<div class="ins-headline">${bi(block.headline)}</div>`;
+  const items = isPublic ? block.what_the_data_shows : block.findings;
+  if (items) {
+    html += `<div class="ins-sec">${isPublic ? t('ins_what_shows') : ''}</div>`;
+    items.forEach(it => { html += `<div class="ins-bullet">→ ${bi(it)}</div>`; });
+  }
+  if (isPublic && block.whats_been_done) {
+    html += `<div class="ins-rec"><div class="ins-rec-lbl">${t('ins_whats_done')}</div>${bi(block.whats_been_done)}</div>`;
+  }
+  if (!isPublic && block.recommendation) {
+    html += `<div class="ins-rec">${bi(block.recommendation)}</div>`;
+  }
+  return html;
 }
 
 function renderInsights() {
-  const pubEl = document.getElementById('insights-public');
-  const teamEl = document.getElementById('insights-team');
-
-  if (!INSIGHTS || INSIGHTS.status !== 'ok') {
-    const msg = '<div class="empty">No insights generated yet.</div>';
-    pubEl.innerHTML = msg;
-    teamEl.innerHTML = msg + `<button class="ins-gen-btn" id="gen-insights-btn" style="margin-top:10px">Generate Insights Now</button>`;
-    bindGenerateButton();
+  const pubEl = document.getElementById('pub-insights-card');
+  const progEl = document.getElementById('prog-intel');
+  const opEl = document.getElementById('op-intel');
+  const btnHtml = `<button class="ins-btn" id="gen-insights-btn" onclick="triggerInsights()">${t('insights_generate')}</button>`;
+  if (!INSIGHTS) {
+    pubEl.innerHTML = `<div class="empty">${t('insights_loading')}</div><div style="text-align:center;margin-top:10px">${btnHtml}</div>`;
+    progEl.innerHTML = `<div class="empty">${t('insights_loading')}</div>`;
+    opEl.innerHTML = `<div class="empty">${t('insights_loading')}</div>`;
     return;
   }
-
-  const ts = new Date(INSIGHTS.generated_at).toLocaleString();
-  pubEl.innerHTML = `
-    <div class="ins-card">
-      <div class="ins-badge">🧠 AI Insight Briefing</div>
-      <div class="ins-headline">${INSIGHTS.public.headline}</div>
-      <div class="ins-ts">Generated ${ts} · based on ${INSIGHTS.based_on_records} records</div>
-      <div class="ins-sec">What the data shows</div>
-      ${bulletsHtml(INSIGHTS.public.what_the_data_shows)}
-      <div class="ins-rec">${INSIGHTS.public.whats_been_done}</div>
-    </div>`;
-
-  teamEl.innerHTML = `
-    <div class="ins-card">
-      <div class="ins-badge">🎯 Programme Intelligence</div>
-      <div class="ins-headline">${INSIGHTS.programme_intelligence.headline}</div>
-      ${bulletsHtml(INSIGHTS.programme_intelligence.findings)}
-      <div class="ins-rec">${INSIGHTS.programme_intelligence.recommendation}</div>
-    </div>
-    <div class="ins-card">
-      <div class="ins-badge">⚙️ Operational Intelligence</div>
-      <div class="ins-headline">${INSIGHTS.operational_intelligence.headline}</div>
-      ${bulletsHtml(INSIGHTS.operational_intelligence.findings)}
-    </div>
-    <div class="ins-ts">Generated ${ts} · based on ${INSIGHTS.based_on_records} records</div>
-    <button class="ins-gen-btn" id="gen-insights-btn">Regenerate</button>`;
-  bindGenerateButton();
+  pubEl.innerHTML = insightBlockHtml(INSIGHTS.public, true) + `<div style="text-align:center;margin-top:12px">${btnHtml}</div>`;
+  progEl.innerHTML = insightBlockHtml(INSIGHTS.programme_intelligence, false);
+  opEl.innerHTML = insightBlockHtml(INSIGHTS.operational_intelligence, false);
 }
 
-function bindGenerateButton() {
+async function triggerInsights() {
   const btn = document.getElementById('gen-insights-btn');
-  if (!btn) return;
-  btn.onclick = async () => {
-    btn.textContent = 'Generating…';
-    btn.disabled = true;
-    try {
-      const res = await fetch('/api/generate-insights', { method: 'POST' });
-      const result = await res.json();
-      if (result.ok) {
-        INSIGHTS = result.insights;
-        renderInsights();
-      } else {
-        btn.textContent = 'Failed — retry';
-        btn.disabled = false;
-        alert('Could not generate insights: ' + result.reason);
-      }
-    } catch (err) {
-      btn.textContent = 'Failed — retry';
-      btn.disabled = false;
-    }
-  };
-}
-
-async function loadInsights() {
+  if (btn) { btn.disabled = true; btn.textContent = t('insights_generating'); }
   try {
-    const res = await fetch('/api/insights');
-    INSIGHTS = await res.json();
-  } catch { INSIGHTS = null; }
+    const res = await fetch('/api/generate-insights', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) { INSIGHTS = data.insights; }
+  } catch (e) {}
   renderInsights();
 }
 
 function renderAll() {
+  buildNav();
+  applyStaticText();
   renderOverview();
   renderTrends();
   renderSchools();
   renderProgramme();
   renderDQ();
-  loadInsights();
+  renderInsights();
 }
 
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach(p => p.hidden = p.dataset.panel !== name);
-}
-document.querySelectorAll('.tab[data-tab]').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+/* ============================== Language toggle ============================== */
+document.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    LANG = btn.dataset.lang;
+    localStorage.setItem('soma_lang', LANG);
+    renderAll();
+  });
+});
 
-// --- Team access gate (light, client-side — see TEAM_PASSPHRASE note above) ---
+/* ============================== Team access gate ============================== */
 const TEAM_KEY = 'soma_team_unlocked';
+function isTeamUnlocked() { return sessionStorage.getItem(TEAM_KEY) === '1'; }
 function setTeamUnlocked(v) {
   if (v) sessionStorage.setItem(TEAM_KEY, '1'); else sessionStorage.removeItem(TEAM_KEY);
-  document.querySelectorAll('[data-team]').forEach(el => el.hidden = !v);
-  document.getElementById('team-badge').textContent = v ? '🔓 Team' : '🔒 Team';
+  document.getElementById('team-badge-side') && (document.getElementById('team-badge-side').textContent = v ? '🔓 Team' : '🔒 Team');
+  buildNav();
+  if (!v && TAB_DEFS.find(d => d.key === currentTab)?.team) switchTab('overview');
 }
-function isTeamUnlocked() { return sessionStorage.getItem(TEAM_KEY) === '1'; }
 function tryUnlock(pass) {
   if (pass === TEAM_PASSPHRASE) {
     setTeamUnlocked(true);
@@ -504,57 +668,60 @@ function tryUnlock(pass) {
     document.getElementById('lock-err').textContent = '';
     return true;
   }
-  document.getElementById('lock-err').textContent = 'Incorrect passphrase.';
+  document.getElementById('lock-err').textContent = LANG === 'sw' ? 'Nenosiri si sahihi.' : 'Incorrect passphrase.';
   return false;
 }
-document.getElementById('team-badge').addEventListener('click', () => {
-  if (isTeamUnlocked()) { setTeamUnlocked(false); switchTab('overview'); return; }
+function openLock() {
   document.getElementById('lock-overlay').hidden = false;
   document.getElementById('lock-input').value = '';
   document.getElementById('lock-input').focus();
-});
+}
+document.getElementById('team-badge-side').addEventListener('click', () => { isTeamUnlocked() ? setTeamUnlocked(false) : openLock(); });
 document.getElementById('lock-submit').addEventListener('click', () => tryUnlock(document.getElementById('lock-input').value));
 document.getElementById('lock-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(e.target.value); });
 document.getElementById('lock-overlay').addEventListener('click', e => { if (e.target.id === 'lock-overlay') document.getElementById('lock-overlay').hidden = true; });
 
-// Triple-tap the header (mobile-friendly alternative to typing a passphrase on desktop only)
 let tapCount = 0, tapTimer = null;
 document.getElementById('hdr-tap-zone').addEventListener('click', () => {
   tapCount++;
   clearTimeout(tapTimer);
   tapTimer = setTimeout(() => { tapCount = 0; }, 600);
-  if (tapCount >= 3) {
-    tapCount = 0;
-    if (!isTeamUnlocked()) {
-      document.getElementById('lock-overlay').hidden = false;
-      document.getElementById('lock-input').focus();
-    }
-  }
+  if (tapCount >= 3) { tapCount = 0; if (!isTeamUnlocked()) openLock(); }
 });
 
-if (isTeamUnlocked()) setTeamUnlocked(true);
+/* ============================== Reports ============================== */
+function openReport(kind, schoolId) {
+  const url = kind === 'school' ? `/report.html?type=school&id=${schoolId}&lang=${LANG}` : `/report.html?type=district&lang=${LANG}`;
+  window.open(url, '_blank');
+}
 
-// --- Load data ---
+/* ============================== Load data ============================== */
 async function load() {
+  applyStaticText();
   try {
     const res = await fetch('/api/summary');
     DATA = await res.json();
     const badge = document.getElementById('status-badge');
     if (DATA.status === 'ok') {
-      badge.textContent = `LIVE · ${DATA.total_records} records`;
+      badge.textContent = `${t('status_live')} · ${DATA.total_records} ${t('records')}`;
       badge.className = 'badge live';
       renderAll();
     } else if (DATA.status === 'pending_first_fetch') {
-      badge.textContent = 'CONNECTING…';
-      badge.className = 'badge team';
+      badge.textContent = t('status_connecting'); badge.className = 'badge team';
     } else {
-      badge.textContent = 'NOT CONFIGURED';
-      badge.className = 'badge team';
+      badge.textContent = t('status_not_configured'); badge.className = 'badge team';
     }
   } catch (err) {
-    document.getElementById('status-badge').textContent = 'ERROR';
+    document.getElementById('status-badge').textContent = t('status_error');
   }
+  try {
+    const res2 = await fetch('/api/insights');
+    const ins = await res2.json();
+    if (ins && ins.public) { INSIGHTS = ins; renderInsights(); }
+  } catch (e) {}
 }
+if (isTeamUnlocked()) setTeamUnlocked(true);
+buildNav();
 load();
 
 if ('serviceWorker' in navigator) {

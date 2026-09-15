@@ -15,5 +15,33 @@ export const SCHOOLS = {
   '10': { name: 'Visiga', ward: 'Visiga' },
 };
 
+// Group names follow Tanzania's own NECTA/KKK national assessment framework's
+// growth-verb vocabulary (wanaochipukia = "sprouting", wanaoendelea =
+// "progressing", wanaofikia kipimo = "reaching the standard") rather than
+// static labels like the old "Mwanzo" — same journey framing already
+// recognized nationally since the KKK strategic plan (Jan 2026), applied
+// consistently across both reading and arithmetic. English side mirrors
+// standard literacy-pedagogy terms (Emergent/Developing/Proficient).
+export const GROUP_NAMES = {
+  sw: ['Anaanza', 'Anachipukia', 'Anaendelea', 'Amefikia Kiwango'],
+  en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
+};
+export const OUTLIER_NAME = { sw: 'Amevuka Kiwango', en: 'Beyond Standard' };
+
+// The specific skill each level actually represents — shown alongside the
+// group name so it's never just an abstract label (ask: "be clear at which
+// learning skill we are communicating our benchmark").
+export const READING_SKILL = {
+  sw: ['bado hajasoma silabi', 'anasoma silabi', 'anasoma maneno', 'anasoma aya kwa ufasaha'],
+  en: ['not yet reading syllables', 'reading syllables', 'reading words', 'reading a paragraph fluently'],
+};
+export const ARITH_SKILL = {
+  sw: ['bado hajatambua namba', 'anatambua namba', 'anajumlisha', 'anatoa'],
+  en: ['not yet recognizing numbers', 'recognizing numbers', 'can add', 'can subtract'],
+};
+export const READING_OUTLIER_SKILL = { sw: 'anasoma hadithi', en: 'reading a full story' };
+export const ARITH_OUTLIER_SKILL = { sw: 'anazidisha', en: 'can multiply' };
+
+// Kept for anything still expecting the old plain level names internally.
 export const READING_LEVELS = ['Mwanzo', 'Silabi', 'Maneno', 'Aya'];
 export const ARITH_LEVELS = ['Mwanzo', 'Namba', 'Kujumlisha', 'Kutoa'];
