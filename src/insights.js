@@ -1,4 +1,4 @@
-import { ROUND_KEYS, ROUND_META } from './rounds.js';
+import { ROUND_KEYS, ROUND_META, roundMethod } from './rounds.js';
 
 const READING_LEVELS = ['Wanaoanza (not yet reading syllables)', 'Wanaochipukia/Emerging (reading syllables)',
   'Wanaoendelea/Progressing (reading words)', 'Waliofikia Kiwango/On Track (reading a paragraph fluently)'];
@@ -10,11 +10,17 @@ const ARITH_LEVELS = ['Wanaoanza (not yet recognizing numbers)', 'Wanaochipukia/
 // under an older schema and prompt for regeneration instead of silently
 // rendering mismatched-language or missing-field content (this is exactly
 // how the "some insight text stayed in English under Swahili" bug
-// happened — old plain-string content surviving a schema change).
-export const INSIGHTS_SCHEMA_VERSION = 2;
+// happened — old plain-string content surviving a schema change). Also
+// bumped when the underlying terminology changes enough that old cached
+// text would look wrong next to the rest of the dashboard (e.g. the
+// Round/Pilot -> Visit/Ziara rename).
+export const INSIGHTS_SCHEMA_VERSION = 6;
 
 function pct(count, n) { return n > 0 ? Math.round((count / n) * 100) : 0; }
-function roundLabel(key) { return `${key} (${ROUND_META[key].technical.en}, ${ROUND_META[key].method})`; }
+function roundLabel(key, year) {
+  const m = ROUND_META[key];
+  return key === 'pilot' ? `Pilot (${roundMethod(year, key)})` : `Visit #${m.number} (${m.technical.en}, ${roundMethod(year, key)})`;
+}
 
 // Condenses the full aggregate into a compact, human-readable brief for the
 // model — not the raw JSON. Keeps the prompt small and keeps Claude from
@@ -32,7 +38,7 @@ function buildDataBrief(summary) {
   for (const round of ROUND_KEYS) {
     const b = yearData.rounds[round];
     if (!b.n) continue;
-    lines.push(`${roundLabel(round)} (n=${b.n}): Reading — ` +
+    lines.push(`${roundLabel(round, latestYear)} (n=${b.n}): Reading — ` +
       READING_LEVELS.map((l, i) => `${l}: ${pct(b.reading[i], b.n)}%`).join(', ') +
       `. Arithmetic — ` + ARITH_LEVELS.map((l, i) => `${l}: ${pct(b.arithmetic[i], b.n)}%`).join(', '));
   }
@@ -70,15 +76,21 @@ Standard) for children who exceed the top skill. Every child is on a journey thr
 across the school year; the programme goal is every child reaching "Waliofikia Kiwango" for their \
 grade. SOMA groups children for differentiated classroom teaching and recognises schools for \
 LEARNING GROWTH (not absolute scores) at an annual Mwalimu Kinara ceremony co-funded by Kibaha \
-District Council. Assessment rounds each year are Round 1/Baseline (full census, Jan-Jun), Round 2/
-Midline (sample, Jul-mid Oct), and Round 3/Endline (sample, mid Oct-Dec); 2026 itself is the Pilot
-year (full census, doesn't follow the normal 3-round annual cycle since the programme launched
-mid-year).
+District Council. 2026 is the programme's PILOT year: every 2026 assessment is grouped as one \
+"Pilot" snapshot (a full census) — never call 2026 data "Visit #1/#2/#3" or "Baseline/Midline". \
+From 2027 each year has three visits — Ziara #1/Visit #1 (Baseline, Jan-Jun, census), Ziara #2/Visit #2 \
+(Midline, Jul-mid Oct, sample) and Ziara #3/Visit #3 (Endline, mid Oct-Dec, sample). In Swahili text too, call it "Pilot" — never \
+"Jaribio" or any other translation.
 
 ALWAYS use this exact terminology (Wanaoanza/Wanaochipukia/Wanaoendelea/Waliofikia Kiwango/Waliovuka \
 Kiwango) when referring to stages — never invent alternative names, never use the singular "Ana-" \
 forms, and never use the old terms "Mwanzo", "Silabi", "Maneno", "Aya", "Namba", "Kujumlisha", \
 "Kutoa" in your written output (those are internal skill labels, not the stage names a reader sees).
+
+When referring to a visit in Swahili text, say "Ziara #1"/"Ziara #2"/"Ziara #3" only. Never say \
+"Msingi", "Katikati", or "Mwisho" for a visit in Swahili — field feedback found these genuinely \
+ambiguous/confusing to Swahili readers. This restriction is Swahili-only: in English text, "Visit \
+#1 (Baseline)" etc. is fine.
 
 Do NOT reference "coaching" or "School Coaches" as a programme activity — that is not part of the \
 current design. Real programme activities you may reference: ability-based classroom grouping, and \
@@ -147,8 +159,8 @@ export async function generateInsights(summary, apiKey) {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2800,
+      model: 'claude-sonnet-5',
+      max_tokens: 8000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: `Here is the current SOMA data brief:\n\n${brief}` }],
     }),
@@ -160,7 +172,11 @@ export async function generateInsights(summary, apiKey) {
   }
 
   const data = await resp.json();
-  const raw = data.content?.[0]?.text || '';
+  // Sonnet 5 has adaptive thinking on by default, so content[0] is often a
+  // thinking block, not text — find the actual text block instead of
+  // assuming position 0 (that assumption is what silently broke this).
+  const textBlock = (data.content || []).find((b) => b.type === 'text');
+  const raw = textBlock?.text || '';
   // Models sometimes wrap JSON in ```json fences despite instructions not
   // to — strip them defensively rather than relying on prompt compliance.
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
@@ -168,7 +184,7 @@ export async function generateInsights(summary, apiKey) {
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error(`Model did not return valid JSON: ${raw.slice(0, 200)}`);
+    throw new Error(`Model did not return valid JSON (stop_reason=${data.stop_reason}, raw_len=${raw.length}): tail="${raw.slice(-300)}"`);
   }
   return parsed;
 }

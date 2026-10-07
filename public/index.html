@@ -6,7 +6,8 @@
 <title>SOMA — Kibaha Learning Progress</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="icon" href="/icon-192.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/icon-192.png" type="image/png">
 <meta name="theme-color" content="#354062">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,7 +23,8 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .mainwrap{flex:1;min-width:0}
 
 .hdr{background:#354062;color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;-webkit-user-select:none;user-select:none}
-.hdr-t{font-size:16px;font-weight:800;letter-spacing:.3px}
+.hdr-t{font-size:16px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;gap:7px}
+.hdr-t img{display:block}
 .hdr-s{font-size:10px;opacity:.65;margin-top:2px}
 .hdr-right{display:flex;align-items:center;gap:8px}
 .lang-toggle{display:flex;background:rgba(255,255,255,.12);border-radius:20px;padding:2px;flex-shrink:0}
@@ -43,6 +45,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .year-picker-wrap:empty,.year-picker-wrap .gpills:empty{display:none}
 
 .intro-line{font-size:12px;color:#5a6478;line-height:1.6;background:#fff;border-radius:10px;padding:13px 15px;margin-bottom:14px;box-shadow:0 1px 4px rgba(53,64,98,.10)}
+.journey-note{font-size:10.5px;color:#9aa4b8;line-height:1.5;margin-bottom:10px}
 .intro-line b{color:#354062}
 
 .kg{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
@@ -63,16 +66,31 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .subj-label{font-size:11px;font-weight:700;color:#5a6478;margin-bottom:8px;margin-top:16px}
 .subj-label:first-child{margin-top:0}
 
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 10px;gap:16px}
+/* An explicit `display` on .loading-wrap otherwise always beats the
+   browser's own [hidden]{display:none} rule (author CSS overrides the UA
+   stylesheet regardless of source order), so setting `.hidden = true` in
+   JS silently had no visual effect and the spinner ran forever. */
+#page-loading[hidden]{display:none}
+.spinner{width:36px;height:36px;border:4px solid #eef1f6;border-top-color:#5EA6B8;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:12.5px;color:#7c869c;font-weight:600}
+.loading-bar{width:180px;height:5px;background:#eef1f6;border-radius:3px;overflow:hidden}
+.loading-bar-fill{height:100%;width:40%;background:#5EA6B8;border-radius:3px;animation:loadbar 1.1s ease-in-out infinite}
+@keyframes loadbar{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+
 /* ---------- Journey path (replaces the old stacked-percentage bar) ---------- */
 .journey{display:flex;align-items:flex-start;position:relative;padding:6px 2px 2px}
-.journey::before{content:'';position:absolute;top:24px;left:24px;right:24px;height:3px;background:#eef1f6;z-index:0}
+.journey::before{content:'';position:absolute;top:29px;left:24px;right:24px;height:3px;background:#eef1f6;z-index:0}
 .jstop{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1;min-width:0}
-.jdot{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin-bottom:8px;border:3px solid #F4F4F4;line-height:1;letter-spacing:-.2px}
+.jdot{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;margin-bottom:0;border:3px solid #F4F4F4;line-height:1;letter-spacing:-.2px}
 .jpct{font-size:15px;font-weight:800;color:#354062}
-.jname{font-size:10.5px;font-weight:700;color:#354062;margin-top:2px;line-height:1.3}
-.jskill{font-size:9px;color:#9aa4b8;margin-top:2px;line-height:1.3;padding:0 2px}
+.jname{font-size:8.5px;font-weight:700;letter-spacing:.3px;color:#8891a8;margin-top:8px;line-height:1.3;text-transform:uppercase}
+.jskill{font-size:11px;font-weight:400;color:#354062;margin-top:3px;line-height:1.3;padding:0 2px}
 .jstop.outlier{flex:0 0 auto;width:64px;margin-left:6px}
 .jstop.outlier .jdot{width:44px;height:44px;font-size:11px}
+.skillrow-desc{font-weight:700;color:#354062;font-size:11.5px;line-height:1.3}
+.skillrow-name{font-size:8.5px;font-weight:700;letter-spacing:.3px;color:#8891a8;text-transform:uppercase;margin-top:2px}
 
 .empty{font-size:12px;color:#9aa4b8;text-align:center;padding:20px 8px}
 .access-line{font-size:11px;color:#9aa4b8;margin-bottom:16px;padding-left:2px}
@@ -125,6 +143,11 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .report-btn:hover{border-color:#5EA6B8}
 
 .foot{font-size:10px;color:#c3cadb;text-align:center;padding:10px 0 26px}
+.foot-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.foot-wrap img{display:block;opacity:.85}
+.foot-wrap .foot{padding:0 0 26px}
+.by-li{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:#9aa4b8}
+.by-li img{display:block}
 
 #lock-overlay{position:fixed;inset:0;background:rgba(53,64,98,.85);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 #lock-overlay[hidden]{display:none}
@@ -163,7 +186,11 @@ a{color:#5EA6B8}a:hover{color:#354062}
 
 <div class="shell">
   <div class="side">
-    <div class="side-brand"><div class="t">SOMA</div><div class="s" data-t="hdr_sub">Maendeleo ya Kujifunza — Kibaha</div></div>
+    <div class="side-brand">
+      <div class="t">SOMA</div>
+      <div class="s" data-t="hdr_sub">Maendeleo ya Kujifunza — Kibaha</div>
+      <div class="by-li"><img src="/learnimpact-mark-white.png" alt="LearnImpact" height="14"><span>LearnImpact</span></div>
+    </div>
     <div class="side-lang">
       <button class="lang-btn" data-lang="sw">SW</button>
       <button class="lang-btn" data-lang="en">EN</button>
@@ -175,7 +202,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
   <div class="mainwrap">
     <div class="hdr" id="hdr-tap-zone">
       <div>
-        <div class="hdr-t">SOMA</div>
+        <div class="hdr-t"><img src="/learnimpact-mark-white.png" alt="" height="18">SOMA</div>
         <div class="hdr-s" data-t="hdr_sub">Maendeleo ya Kujifunza — Kibaha</div>
       </div>
       <div class="hdr-right">
@@ -192,14 +219,33 @@ a{color:#5EA6B8}a:hover{color:#354062}
       <div class="gpills" id="year-picker" style="margin-bottom:0"></div>
     </div>
 
+    <div class="loading-wrap" id="page-loading">
+      <div class="spinner"></div>
+      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+      <div class="loading-txt" data-t="page_loading"></div>
+    </div>
+
     <div class="panel on" data-panel="overview">
-      <div class="intro-line" data-t="intro_overview"></div>
+      <div class="intro-line" data-t="statement_line"></div>
       <div class="kg" id="ov-kpis"></div>
-      <div class="report-btns">
-        <button class="report-btn" onclick="openReport('district')">📄 <span data-t="btn_district_report"></span></button>
+
+      <div class="card">
+        <div class="ct"><span data-t="ct_find_school"></span></div>
+        <div id="find-school"></div>
       </div>
+
+      <div class="card leaders-card">
+        <div class="ct"><span data-t="ct_leaders"></span></div>
+        <div class="report-btns" style="margin-bottom:0">
+          <button class="report-btn" onclick="switchTab('trends')">📈 <span data-t="tab_trends_plain"></span></button>
+          <button class="report-btn" onclick="switchTab('schools')">🏫 <span data-t="tab_schools_plain"></span></button>
+          <button class="report-btn" onclick="openReport('district')">📄 <span data-t="btn_district_report"></span></button>
+        </div>
+      </div>
+
       <div class="card">
         <div class="ct"><span data-t="ct_journey"></span> <span class="ct-sub" id="ov-round-lbl"></span></div>
+        <div class="journey-note" data-t="journey_note"></div>
         <div id="ov-journey"></div>
       </div>
       <div class="card">
@@ -211,11 +257,11 @@ a{color:#5EA6B8}a:hover{color:#354062}
 
     <div class="panel" data-panel="trends" hidden>
       <div class="card">
-        <div class="ct"><span data-t="ct_trend_reading"></span> <span class="ct-sub" data-t="ct_trend_sub"></span></div>
+        <div class="ct"><span data-t="ct_trend_reading"></span> <span class="ct-sub" id="trend-sub-r"></span></div>
         <div class="trend-row" id="trend-reading"></div>
       </div>
       <div class="card">
-        <div class="ct"><span data-t="ct_trend_arith"></span> <span class="ct-sub" data-t="ct_trend_sub"></span></div>
+        <div class="ct"><span data-t="ct_trend_arith"></span> <span class="ct-sub" id="trend-sub-a"></span></div>
         <div class="trend-row" id="trend-arith"></div>
       </div>
       <div class="intro-line" id="trend-note" hidden data-t="projection_note"></div>
@@ -227,7 +273,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
         <div id="school-compare"></div>
       </div>
       <div class="card">
-        <div class="ct">🌟 <span data-t="ct_rising"></span> <span class="ct-sub" data-t="ct_rising_sub"></span></div>
+        <div class="ct">🌟 <span data-t="ct_rising"></span> <span class="ct-sub" id="ct-rising-sub"></span></div>
         <div id="rising-fast"></div>
       </div>
     </div>
@@ -280,7 +326,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
       <div class="card"><div class="ct">⚙️ <span data-t="ct_operational_intel"></span></div><div id="op-intel"></div></div>
     </div>
 
-    <div class="foot" data-t="foot"></div>
+    <div class="foot-wrap"><img src="/learnimpact-mark-color.png" alt="" height="15"><div class="foot" data-t="foot"></div></div>
   </div>
 </div>
 
@@ -298,34 +344,40 @@ a{color:#5EA6B8}a:hover{color:#354062}
 /* ============================== i18n ============================== */
 const T = {
   sw: {
-    hdr_sub: 'Maendeleo ya Kujifunza — Kibaha',
+    hdr_sub: 'Msingi Bora wa Kusoma, Kuandika na Kuhesabu (KKK) kwa kila Mtoto',
     tab_overview: '🏠 Muhtasari', tab_trends: '📈 Mwenendo', tab_schools: '🏫 Shule',
     tab_insights: '🧠 Uchambuzi', tab_programme: '📊 Programu', tab_dq: '✅ Ubora wa Takwimu',
-    tab_team_insights: '🧠 Uchambuzi wa Ndani', tab_guidance: '📘 Mwongozo wa Ualimu',
-    intro_overview: 'Kila mtoto anapitia <b>hatua nne</b> za kujifunza mwaka mzima — kutoka <b>Wanaoanza</b> hadi <b>Waliofikia Kiwango</b>. Lengo la programu ni kila mtoto kufika hatua ya mwisho katika darasa lake.',
+    tab_team_insights: '🧠 Uchambuzi wa Ndani', tab_guidance: '📘 Mwongozo wa Walimu',
+    statement_line: 'LearnImpact kupitia mpango wa SOMA inasaidia shule za msingi kumfundisha kila mtoto stadi za msingi za KUSOMA, KUANDIKA na KUHESABU (KKK) kwa kuzingatia kiwango halisi cha uwezo wake ili kutatua changamoto ya wanafunzi kukariri madarasa na kuacha shule mapema.',
+    journey_note: 'Kila mtoto anapitia <b>hatua nne</b> za kujifunza mwaka mzima — kutoka <b>Wanaoanza</b> hadi <b>Waliofikia Kiwango</b>. Lengo la programu ni kila mtoto kufika hatua ya mwisho katika darasa lake.',
+    ct_find_school: '🏫 Tafuta Shule Yako', ct_leaders: '📊 Kwa Viongozi na Wadau',
+    tab_trends_plain: 'Mwenendo', tab_schools_plain: 'Shule',
+    find_school_empty: 'Hakuna shule yenye takwimu bado.',
     ct_journey: 'Safari ya Kujifunza', ct_by_grade: 'kwa darasa',
     ct_skill_breakdown: 'Ustadi kwa Kina', ct_trend_reading: 'Usomaji — Amefikia Kiwango+',
-    ct_trend_arith: 'Hesabu — Amefikia Kiwango+', ct_trend_sub: 'Msingi → Katikati → Mwisho',
-    ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Ongezeko Kubwa la Ujifunzaji', ct_rising_sub: 'ongezeko kubwa, Msingi → Katikati',
-    ct_rounds: 'Raundi za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
+    ct_trend_arith: 'Hesabu — Amefikia Kiwango+',
+    ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Ongezeko Kubwa la Ujifunzaji', ct_rising_sub_prefix: 'ongezeko kubwa,',
+    ct_rounds: 'Ziara za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
     ct_enumerators: 'Uwasilishaji kwa Mtahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
     kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Waliofikia Kiwango',
     kpi_arith: 'Hesabu — Waliofikia Kiwango', of_schools: 'kati ya shule 10',
-    lbl_baseline: 'Msingi', lbl_midline: 'Katikati', lbl_endline: 'Mwisho', lbl_grade: 'Darasa',
-    lbl_reading: 'Usomaji', lbl_arithmetic: 'Hesabu', lbl_change: 'Mabadiliko', lbl_skill: 'Ustadi',
+    lbl_grade: 'Darasa',
+    lbl_reading: 'Usomaji', lbl_arithmetic: 'Hesabu', lbl_change: 'Mabadiliko', lbl_skill: 'Kiwango cha Ujifunzaji',
     lbl_school: 'Shule', lbl_enumerator: 'Mtahini',
     btn_district_report: 'Pakua Ripoti ya Wilaya (PDF)', btn_school_report: 'Ripoti ya Shule',
     team_access_line: '<b>Inaonekana kwa:</b> Waratibu · HQ · Uongozi — <b>haionyeshwi hapa:</b> majina ya wanafunzi, nambari pekee',
     lock_title: 'Ufikiaji wa Timu', lock_desc: 'Weka nenosiri kuona takwimu za ndani za programu.', lock_btn: 'Fungua',
+    page_loading: 'Inapakia takwimu za dashibodi…',
+    load_failed: 'Imeshindwa kupakia — mtandao unaweza kuwa dhaifu.', retry: 'Jaribu Tena',
     status_live: 'MUBASHARA', status_connecting: 'INAUNGANISHA…', status_not_configured: 'HAIJAWEKWA', status_error: 'HITILAFU',
     status_offline: 'NJE YA MTANDAO', last_synced: 'Ilisawazishwa mara ya mwisho',
-    records: 'rekodi', foot: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
+    records: 'rekodi', foot: 'SOMA · LearnImpact · Halmashauri ya Wilaya na Manispaa ya Kibaha',
     ct_projection: 'Makadirio ya Mwisho', projection_note: 'Makadirio kwa kutumia mwenendo wa sasa — si uhakika.',
     voice_listen: '🔊 Sikiliza', voice_stop: '⏸️ Simamisha',
     empty_no_data: 'Hakuna takwimu bado kwa raundi hii.', empty_no_grade: 'Hakuna takwimu za kutosha kwa darasa hili bado.',
-    empty_no_schools: 'Hakuna takwimu za shule bado.', empty_rising: 'Inahitaji raundi ya Msingi na Katikati kuonyesha ongezeko.',
+    empty_no_schools: 'Hakuna takwimu za shule bado.', empty_rising: 'Inahitaji ziara mbili za kwanza zenye takwimu kuonyesha ongezeko.',
     empty_flags: 'Hakuna vibendera — ubora wa takwimu uko sawa.', empty_enum: 'Hakuna uwasilishaji bado',
-    empty_no_data_row: 'Hakuna takwimu bado', vs_baseline: 'ikilinganishwa na Msingi',
+    empty_no_data_row: 'Hakuna takwimu bado', vs_baseline: 'ikilinganishwa na',
     insights_loading: 'Bofya kitufe kuzalisha uchambuzi mpya.', insights_generate: '🧠 Zalisha Uchambuzi',
     insights_generating: 'Inazalisha…', insights_refreshed: 'Ilisasishwa',
     insights_stale: 'Uchambuzi wa awali ni wa zamani — bofya kuzalisha mpya.',
@@ -333,34 +385,40 @@ const T = {
     guidance_draft_note: '⚠️ Rasimu ya kwanza ya mwongozo — itaboreshwa. Hii inaonyesha mwelekeo wa jumla wa shughuli za kufundishia kwa kila kundi, kama zinavyokabidhiwa kwa walimu wakati wa ziara ya tathmini ya msingi.',
   },
   en: {
-    hdr_sub: 'Kibaha Learning Progress',
+    hdr_sub: 'A Strong Foundation in Reading, Writing and Arithmetic (3Rs) for Every Child',
     tab_overview: '🏠 Overview', tab_trends: '📈 Trends', tab_schools: '🏫 Schools',
     tab_insights: '🧠 Insights', tab_programme: '📊 Programme', tab_dq: '✅ Data Quality',
-    tab_team_insights: '🧠 Team Insights',
-    intro_overview: 'Every child moves through <b>four stages</b> of learning across the year — from <b>Starting Out</b> to <b>On Track</b>. The programme\'s goal is every child reaching the final stage for their grade.',
+    tab_team_insights: '🧠 Team Insights', tab_guidance: '📘 Teaching Guide',
+    statement_line: 'LearnImpact, through the SOMA programme, helps primary schools teach every child the foundational skills of READING, WRITING and ARITHMETIC (3Rs), matched to their real ability level, to address the challenge of students repeating grades and leaving school early.',
+    journey_note: 'Every child moves through <b>four stages</b> of learning across the year — from <b>Starting Out</b> to <b>On Track</b>. The programme\'s goal is every child reaching the final stage for their grade.',
+    ct_find_school: '🏫 Find Your School', ct_leaders: '📊 For Leaders & Partners',
+    tab_trends_plain: 'Trends', tab_schools_plain: 'Schools',
+    find_school_empty: 'No schools have data yet.',
     ct_journey: 'Learning Journey', ct_by_grade: 'by grade',
     ct_skill_breakdown: 'Skill Breakdown', ct_trend_reading: 'Reading — On Track+',
-    ct_trend_arith: 'Arithmetic — On Track+', ct_trend_sub: 'Baseline → Midline → Endline',
-    ct_compare: 'How Schools Compare', ct_rising: 'Rising Fast', ct_rising_sub: 'biggest gains, Baseline → Midline',
-    ct_rounds: 'Assessment Rounds', ct_school_grade: 'School × Grade', ct_flags: 'Flags Needing Attention',
+    ct_trend_arith: 'Arithmetic — On Track+',
+    ct_compare: 'How Schools Compare', ct_rising: 'Rising Fast', ct_rising_sub_prefix: 'biggest gains,',
+    ct_rounds: 'Assessment Visits', ct_school_grade: 'School × Grade', ct_flags: 'Flags Needing Attention',
     ct_enumerators: 'Submissions by Enumerator', ct_programme_intel: 'Programme Intelligence', ct_operational_intel: 'Operational Intelligence',
     kpi_students: 'Students Assessed', kpi_schools: 'Schools Reporting', kpi_reading: 'Reading — On Track',
     kpi_arith: 'Arithmetic — On Track', of_schools: 'of 10 schools',
-    lbl_baseline: 'Baseline', lbl_midline: 'Midline', lbl_endline: 'Endline', lbl_grade: 'Grade',
-    lbl_reading: 'Reading', lbl_arithmetic: 'Arithmetic', lbl_change: 'Change', lbl_skill: 'Skill',
+    lbl_grade: 'Grade',
+    lbl_reading: 'Reading', lbl_arithmetic: 'Arithmetic', lbl_change: 'Change', lbl_skill: 'Learning Level',
     lbl_school: 'School', lbl_enumerator: 'Enumerator',
     btn_district_report: 'Download District Report (PDF)', btn_school_report: 'School Report',
     team_access_line: '<b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only',
     lock_title: 'Team Access', lock_desc: 'Enter the team passphrase to view internal programme data.', lock_btn: 'Unlock',
+    page_loading: 'Loading dashboard data…',
+    load_failed: 'Failed to load — your connection may be weak.', retry: 'Try Again',
     status_live: 'LIVE', status_connecting: 'CONNECTING…', status_not_configured: 'NOT CONFIGURED', status_error: 'ERROR',
     status_offline: 'OFFLINE', last_synced: 'Last synced',
-    records: 'records', foot: 'LearnImpact · SOMA Programme · Kibaha District & Municipal Councils',
+    records: 'records', foot: 'SOMA · LearnImpact · Kibaha District & Municipal Councils',
     ct_projection: 'Projected Endline', projection_note: 'Estimated from the current trend — not a guarantee.',
     voice_listen: '🔊 Listen', voice_stop: '⏸️ Stop',
     empty_no_data: 'No data yet for this round.', empty_no_grade: 'Not enough data yet for this grade.',
-    empty_no_schools: 'No school data yet.', empty_rising: 'Needs both a Baseline and a Midline round to show gains.',
+    empty_no_schools: 'No school data yet.', empty_rising: 'Needs data from the first two visits to show gains.',
     empty_flags: 'No flags — data quality looks clean.', empty_enum: 'No submissions yet',
-    empty_no_data_row: 'No data yet', vs_baseline: 'vs Baseline',
+    empty_no_data_row: 'No data yet', vs_baseline: 'vs',
     insights_loading: 'Click the button to generate fresh insights.', insights_generate: '🧠 Generate Insights',
     insights_generating: 'Generating…', insights_refreshed: 'Refreshed',
     insights_stale: 'The previous analysis is outdated — click to generate a fresh one.',
@@ -386,45 +444,67 @@ const GROUP_NAMES = {
 };
 const OUTLIER_NAME = { sw: 'Waliovuka Kiwango', en: 'Beyond' };
 const READING_SKILL = {
-  sw: ['bado hajasoma silabi', 'anasoma silabi', 'anasoma maneno', 'anasoma aya kwa ufasaha'],
+  sw: ['bado hawajasoma silabi', 'wanasoma silabi', 'wanasoma maneno', 'wanasoma aya kwa ufasaha'],
   en: ['not yet reading syllables', 'reading syllables', 'reading words', 'reading a paragraph fluently'],
 };
 const ARITH_SKILL = {
-  sw: ['bado hajatambua namba', 'anatambua namba', 'anajumlisha', 'anatoa'],
+  sw: ['bado hawajatambua namba', 'wanatambua namba', 'wanajumlisha', 'wanatoa'],
   en: ['not yet recognizing numbers', 'recognizing numbers', 'can add', 'can subtract'],
 };
 const LEVEL_COLORS = ['#BE6243', '#FFC650', '#5EA6B8', '#354062'];
 
 // Rounds are computed server-side from each submission's own date (see
-// src/rounds.js) — 2026 is Pilot-only; 2027+ years use Round 1/2/3. Label
-// format per Michael: "Round N" prominent, technical M&E term (Baseline/
-// Midline/Endline) shown small/faint below it.
+// src/rounds.js) using the same three calendar windows for every year, and
+// displayed as "Visit #N / Ziara #N" (prominent) with the M&E technical
+// term (Baseline/Midline/Endline) shown small/faint below it. 2026, the
+// programme's pilot/launch year, is a full census for every visit; from
+// 2027 onward only Visit #1 (Baseline) is a census, #2/#3 are samples.
 const ROUND_META = {
-  pilot: { number: null, method: 'census', technical: { sw: 'Jaribio', en: 'Pilot' } },
-  round1: { number: 1, method: 'census', technical: { sw: 'Msingi', en: 'Baseline' } },
-  round2: { number: 2, method: 'sample', technical: { sw: 'Katikati', en: 'Midline' } },
-  round3: { number: 3, method: 'sample', technical: { sw: 'Mwisho', en: 'Endline' } },
+  pilot: { number: null, technical: { sw: 'Pilot', en: 'Pilot' }, shortTechnical: { sw: 'Pilot', en: 'Pilot' } },
+  round1: { number: 1, technical: { sw: 'Msingi', en: 'Baseline' }, shortTechnical: { sw: 'MS', en: 'BL' } },
+  round2: { number: 2, technical: { sw: 'Katikati', en: 'Midline' }, shortTechnical: { sw: 'KT', en: 'ML' } },
+  round3: { number: 3, technical: { sw: 'Mwisho', en: 'Endline' }, shortTechnical: { sw: 'MW', en: 'EL' } },
 };
-function roundsForYear(year) { return year === '2026' ? ['pilot'] : ['round1', 'round2', 'round3']; }
-function roundTop(key) { const m = ROUND_META[key]; return m.number ? (LANG === 'sw' ? `Raundi ${m.number}` : `Round ${m.number}`) : m.technical[LANG]; }
+function roundsForYear(year) {
+  // Everything in 2026 is the Pilot — a single full-census snapshot. Normal
+  // Visit #1/#2/#3 numbering starts in 2027 (confirmed by Michael 2026-09-25).
+  return year === '2026' ? ['pilot'] : ['round1', 'round2', 'round3'];
+}
+function roundMethod(key) {
+  return currentYear === '2026' ? 'census' : (key === 'round1' ? 'census' : 'sample');
+}
+function roundTop(key) {
+  const m = ROUND_META[key];
+  if (key === 'pilot') return m.technical[LANG];
+  return LANG === 'sw' ? `Ziara #${m.number}` : `Visit #${m.number}`;
+}
+// The Baseline/Midline/Endline technical term only appears in English —
+// in Swahili it caused real ambiguity/confusion (Michael's field feedback),
+// so Swahili shows "Ziara #N" alone rather than a Msingi/Katikati/Mwisho
+// subtitle underneath it.
 function roundLabelHtml(key) {
   const m = ROUND_META[key];
-  const sub = m.number ? m.technical[LANG] : '';
-  return `<span style="font-weight:700">${roundTop(key)}</span>${sub ? `<br><span style="font-size:9px;color:#9aa4b8;font-weight:400">${sub}</span>` : ''}`;
+  if (LANG !== 'en' || key === 'pilot') return `<span style="font-weight:700">${roundTop(key)}</span>`;
+  return `<span style="font-weight:700">${roundTop(key)}</span><br><span style="font-size:9px;color:#9aa4b8;font-weight:400">${m.technical.en}</span>`;
 }
 function roundLabelPlain(key) {
   const m = ROUND_META[key];
-  return m.number ? `${roundTop(key)} (${m.technical[LANG]})` : m.technical[LANG];
+  return LANG === 'en' && key !== 'pilot' ? `${roundTop(key)} (${m.technical.en})` : roundTop(key);
+}
+// Compact single-line form for tight spaces, e.g. "Visit #1 - BL".
+function roundLabelCompact(key) {
+  const m = ROUND_META[key];
+  return LANG === 'en' && key !== 'pilot' ? `${roundTop(key)} - ${m.shortTechnical.en}` : roundTop(key);
 }
 function methodBadge(key) {
-  const m = ROUND_META[key].method;
+  const m = roundMethod(key);
   const label = m === 'census' ? (LANG === 'sw' ? 'Sensa' : 'Census') : (LANG === 'sw' ? 'Sampuli' : 'Sample');
   return `<span style="font-size:8.5px;font-weight:700;background:#eef1f6;color:#7c869c;padding:1px 6px;border-radius:6px;margin-left:5px">${label}</span>`;
 }
 
 const TAB_DEFS = [
   { key: 'overview', team: false }, { key: 'trends', team: false }, { key: 'schools', team: false },
-  { key: 'guidance', team: false }, { key: 'insights', team: false },
+  { key: 'insights', team: false }, { key: 'guidance', team: false },
   { key: 'programme', team: true }, { key: 'dq', team: true }, { key: 'team-insights', team: true },
 ];
 
@@ -462,11 +542,11 @@ const GUIDANCE = {
       en: ['Recognize numbers 1-99, arrange them in order', 'Compare two numbers — which is bigger, which is smaller'],
     },
     {
-      sw: ['Fanya mazoezi ya kujumlisha kila siku, kuanzia vitu halisi kisha namba', 'Tatua matatizo rahisi ya maneno yanayohusu kujumlisha'],
+      sw: ['Fanya mazoezi ya kujumlisha kila siku, kuanzia vitu halisi kisha namba', 'Tatua maswali rahisi ya mafumbo yanayohusu kujumlisha'],
       en: ['Practice addition daily, starting with real objects then numbers', 'Solve simple word problems involving addition'],
     },
     {
-      sw: ['Fanya mazoezi ya kutoa, ikiwemo kukopa namba', 'Changanya kujumlisha na kutoa katika matatizo ya maneno'],
+      sw: ['Fanya mazoezi ya kutoa, ikiwemo kukopa namba', 'Changanya kujumlisha na kutoa kwenye maswali ya mafumbo'],
       en: ['Practice subtraction, including borrowing', 'Combine addition and subtraction in word problems'],
     },
   ],
@@ -478,7 +558,7 @@ const GUIDANCE = {
 const TEAM_PASSPHRASE = 'soma-kibaha-2026';
 
 // Must match src/insights.js's INSIGHTS_SCHEMA_VERSION exactly.
-const INSIGHTS_SCHEMA_VERSION = 2;
+const INSIGHTS_SCHEMA_VERSION = 6;
 let DATA = null;
 let INSIGHTS = null;
 let INSIGHTS_STALE = false;
@@ -503,7 +583,7 @@ function bestAvailableRound(rounds, year) {
 function renderYearPicker() {
   const el = document.getElementById('year-picker');
   if (!el) return;
-  const years = DATA?.years || [];
+  const years = (DATA && DATA.years) || [];
   if (!currentYear || !years.includes(currentYear)) currentYear = years[years.length - 1] || null;
   if (years.length <= 1) { el.innerHTML = ''; return; }
   el.innerHTML = years.map(y => `<button class="gpill ${y === currentYear ? 'on' : ''}" data-year="${y}">${y}</button>`).join('');
@@ -518,7 +598,12 @@ function buildNav() {
   const sidenav = document.getElementById('side-nav');
   tabbar.innerHTML = ''; sidenav.innerHTML = '';
   TAB_DEFS.forEach(({ key, team }) => {
-    const label = t('tab_' + key.replace('-', '_'));
+    // Teacher guidance is meant for anyone at the school regardless of which
+    // language they toggled the dashboard to, so its tab always shows both
+    // languages together rather than switching with LANG like other tabs.
+    const label = key === 'guidance'
+      ? `${T[LANG].tab_guidance} / ${T[LANG === 'sw' ? 'en' : 'sw'].tab_guidance.replace('📘 ', '')}`
+      : t('tab_' + key.replace('-', '_'));
     const tabEl = document.createElement('div');
     tabEl.className = 'tab' + (key === currentTab ? ' on' : '');
     tabEl.dataset.tab = key;
@@ -558,16 +643,32 @@ function journeyHtml(bucket, skillLabels) {
   const names = GROUP_NAMES[LANG];
   let html = '<div class="journey">';
   for (let i = 0; i < 4; i++) {
-    const p = pct(bucket[i] ?? bucket.reading?.[i], bucket.n);
+    const raw = bucket[i] != null ? bucket[i] : (bucket.reading ? bucket.reading[i] : undefined);
+    const p = pct(raw, bucket.n);
     html += `<div class="jstop"><div class="jdot" style="background:${LEVEL_COLORS[i]}">${p}%</div>
-      <div class="jname">${names[i]}</div><div class="jskill">${skillLabels[LANG][i]}</div></div>`;
+      <div class="jname">${names[i].toUpperCase()}</div><div class="jskill">${skillLabels[LANG][i]}</div></div>`;
   }
   html += '</div>';
   return html;
 }
 
+function renderFindSchool() {
+  const Y = yearData();
+  const el = document.getElementById('find-school');
+  const schools = Y ? Object.entries(Y.schools) : [];
+  // Only schools with real submitted data appear here — Y.schools never
+  // contains a school with zero records, so there's no separate "hide
+  // schools with no data" filter to maintain; it falls out of the data shape.
+  el.innerHTML = schools.length ? schools.map(([id, s]) => `
+    <div class="school-row">
+      <div class="school-name">${s.name}<div class="school-ward">${s.ward || ''}</div></div>
+      <button class="report-btn" style="padding:6px 11px;font-size:10.5px" onclick="openReport('school','${id}')">📄 <span>${t('btn_school_report')}</span></button>
+    </div>`).join('') : `<div class="empty">${t('find_school_empty')}</div>`;
+}
+
 function renderOverview() {
   const Y = yearData();
+  renderFindSchool();
   if (!Y) { document.getElementById('ov-kpis').innerHTML = `<div class="empty">${t('empty_no_data')}</div>`; return; }
   const seq = roundsForYear(currentYear);
   const firstRound = seq[0];
@@ -578,8 +679,8 @@ function renderOverview() {
   document.getElementById('ov-kpis').innerHTML = `
     <div class="kc"><div class="kl">${t('kpi_students')}</div><div class="kv">${current.n}</div><div class="ks">${roundLabelPlain(round)}${methodBadge(round)}</div></div>
     <div class="kc"><div class="kl">${t('kpi_schools')}</div><div class="kv">${Object.keys(Y.schools).length}</div><div class="ks">${t('of_schools')}</div></div>
-    <div class="kc"><div class="kl">${t('kpi_reading')}</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round !== firstRound ? pct(first.reading[3], first.n) + '% ' + t('vs_baseline') : roundLabelPlain(firstRound)}</div></div>
-    <div class="kc"><div class="kl">${t('kpi_arith')}</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round !== firstRound ? pct(first.arithmetic[3], first.n) + '% ' + t('vs_baseline') : roundLabelPlain(firstRound)}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_reading')}</div><div class="kv">${pct(current.reading[3], current.n)}%</div><div class="ks">${round !== firstRound && first.n ? pct(first.reading[3], first.n) + '% ' + t('vs_baseline') + ' ' + roundTop(firstRound) : roundLabelPlain(firstRound)}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_arith')}</div><div class="kv">${pct(current.arithmetic[3], current.n)}%</div><div class="ks">${round !== firstRound && first.n ? pct(first.arithmetic[3], first.n) + '% ' + t('vs_baseline') + ' ' + roundTop(firstRound) : roundLabelPlain(firstRound)}</div></div>
   `;
   document.getElementById('ov-round-lbl').innerHTML = roundLabelHtml(round);
 
@@ -603,16 +704,19 @@ function renderGradePills() {
   });
 }
 
-function skillRow(label, base, now) {
+function skillRow(name, skill, base, now, single) {
   if (base == null || now == null) return '';
+  const label = `<td><div class="skillrow-desc">${skill}</div><div class="skillrow-name">${name.toUpperCase()}</div></td>`;
+  // Only one visit has data yet: showing it twice with a "0 change" column
+  // reads as a comparison against itself, so show a single value instead.
+  if (single) return `<tr>${label}<td class="num" style="text-align:right;font-weight:700">${now}%</td></tr>`;
   const delta = now - base;
   const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '—';
   const cls = delta > 0 ? 'up' : delta < 0 ? 'down' : '';
-  return `<tr><td>${label}</td>
+  return `<tr>${label}
     <td class="num" style="text-align:right">${base}%</td><td class="num" style="text-align:right;font-weight:700">${now}%</td>
     <td class="num" style="text-align:right"><span style="font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:8px;background:${cls === 'up' ? '#EDF4F6' : cls === 'down' ? '#F4F0EC' : '#f4f4f4'};color:${cls === 'up' ? '#2d6a7d' : '#8a8478'}">${arrow} ${Math.abs(delta)}</span></td></tr>`;
 }
-
 function renderSkillBreakdown() {
   const el = document.getElementById('skill-breakdown');
   const Y = yearData();
@@ -622,11 +726,15 @@ function renderSkillBreakdown() {
   if (!g || !g[firstRound].n) { el.innerHTML = `<div class="empty">${t('empty_no_grade')}</div>`; return; }
   const round = bestAvailableRound(g, currentYear);
   const base = g[firstRound], now = g[round];
+  const single = round === firstRound;
   const names = GROUP_NAMES[LANG];
-  let html = `<div class="subj-label">${t('lbl_reading')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabelPlain(firstRound)}</th><th style="text-align:right">${roundLabelPlain(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
-  names.forEach((lbl, i) => { html += skillRow(lbl, pct(base.reading[i], base.n), pct(now.reading[i], now.n)); });
-  html += `</table><div class="subj-label">${t('lbl_arithmetic')}</div><table class="tbl" style="font-size:11.5px"><tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabelPlain(firstRound)}</th><th style="text-align:right">${roundLabelPlain(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
-  names.forEach((lbl, i) => { html += skillRow(lbl, pct(base.arithmetic[i], base.n), pct(now.arithmetic[i], now.n)); });
+  const head = single
+    ? `<tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabelPlain(round)}</th></tr>`
+    : `<tr><th>${t('lbl_skill')}</th><th style="text-align:right">${roundLabelPlain(firstRound)}</th><th style="text-align:right">${roundLabelPlain(round)}</th><th style="text-align:right">${t('lbl_change')}</th></tr>`;
+  let html = `<div class="subj-label">${t('lbl_reading')}</div><table class="tbl" style="font-size:11.5px">${head}`;
+  names.forEach((lbl, i) => { html += skillRow(lbl, READING_SKILL[LANG][i], pct(base.reading[i], base.n), pct(now.reading[i], now.n), single); });
+  html += `</table><div class="subj-label">${t('lbl_arithmetic')}</div><table class="tbl" style="font-size:11.5px">${head}`;
+  names.forEach((lbl, i) => { html += skillRow(lbl, ARITH_SKILL[LANG][i], pct(base.arithmetic[i], base.n), pct(now.arithmetic[i], now.n), single); });
   html += '</table>';
   el.innerHTML = html;
 }
@@ -638,8 +746,8 @@ function renderSkillBreakdown() {
 // (see the sampling-protocol precision-ceiling finding from earlier work).
 function projectedRound3(rounds, field) {
   const b = rounds.round1, m = rounds.round2, e = rounds.round3;
-  if (e?.n) return null; // real Round 3 data exists, no need to project
-  if (!b?.n || !m?.n) return null;
+  if (e && e.n) return null; // real Round 3 data exists, no need to project
+  if (!b || !b.n || !m || !m.n) return null;
   const bp = pct(b[field][3], b.n), mp = pct(m[field][3], m.n);
   return Math.max(0, Math.min(100, mp + (mp - bp)));
 }
@@ -647,7 +755,14 @@ function projectedRound3(rounds, field) {
 function renderTrends() {
   const Y = yearData();
   const seq = currentYear ? roundsForYear(currentYear) : [];
-  if (!Y || seq.length < 2) {
+  const hasAnyData = Y && seq.some(r => Y.rounds[r] && Y.rounds[r].n);
+  // Msingi/Katikati/Mwisho is dropped in Swahili (ambiguous) — each bar
+  // already carries its own "Ziara #N" label, so the subtitle is only
+  // useful in English.
+  const subtitle = LANG === 'en' && seq.length > 1 ? seq.map(r => ROUND_META[r].technical.en).join(' → ') : '';
+  document.getElementById('trend-sub-r').textContent = subtitle;
+  document.getElementById('trend-sub-a').textContent = subtitle;
+  if (!hasAnyData) {
     const msg = `<div class="empty">${t('empty_no_data')}</div>`;
     document.getElementById('trend-reading').innerHTML = msg;
     document.getElementById('trend-arith').innerHTML = '';
@@ -705,11 +820,13 @@ function renderSchools() {
       <button class="report-btn" style="padding:5px 9px;font-size:10px" onclick="openReport('school','${s.id}')">📄</button>
     </div>`).join('') : `<div class="empty">${t('empty_no_schools')}</div>`;
 
-  const gains = Object.entries(Y.schools).map(([id, s]) => {
+  const [gainRoundA, gainRoundB] = roundsForYear(currentYear);
+  document.getElementById('ct-rising-sub').textContent = gainRoundB ? `${t('ct_rising_sub_prefix')} ${roundTop(gainRoundA)} → ${roundTop(gainRoundB)}` : '';
+  const gains = !gainRoundB ? [] : Object.entries(Y.schools).map(([id, s]) => {
     let bn = 0, bc = 0, mn = 0, mc = 0;
     Object.values(s.grades).forEach(g => {
-      if (g.round1) { bn += g.round1.n; bc += g.round1.reading[3]; }
-      if (g.round2) { mn += g.round2.n; mc += g.round2.reading[3]; }
+      if (g[gainRoundA]) { bn += g[gainRoundA].n; bc += g[gainRoundA].reading[3]; }
+      if (g[gainRoundB]) { mn += g[gainRoundB].n; mc += g[gainRoundB].reading[3]; }
     });
     if (!bn || !mn) return null;
     return { name: s.name, ward: s.ward, gain: pct(mc, mn) - pct(bc, bn) };
@@ -809,7 +926,7 @@ function speakBlock(which) {
   if (!SPEECH_SUPPORTED) return;
   if (speakingWhich === which) { speechSynthesis.cancel(); speakingWhich = null; renderInsights(); return; }
   speechSynthesis.cancel();
-  const block = which === 'public' ? INSIGHTS?.public : which === 'programme' ? INSIGHTS?.programme_intelligence : INSIGHTS?.operational_intelligence;
+  const block = which === 'public' ? (INSIGHTS && INSIGHTS.public) : which === 'programme' ? (INSIGHTS && INSIGHTS.programme_intelligence) : (INSIGHTS && INSIGHTS.operational_intelligence);
   const text = blockSpeakText(block, which === 'public');
   if (!text) return;
   const u = new SpeechSynthesisUtterance(text);
@@ -904,7 +1021,8 @@ function setTeamUnlocked(v) {
   if (v) sessionStorage.setItem(TEAM_KEY, '1'); else sessionStorage.removeItem(TEAM_KEY);
   document.getElementById('team-badge-side') && (document.getElementById('team-badge-side').textContent = v ? '🔓 Team' : '🔒 Team');
   buildNav();
-  if (!v && TAB_DEFS.find(d => d.key === currentTab)?.team) switchTab('overview');
+  const currentTabDef = TAB_DEFS.find(d => d.key === currentTab);
+  if (!v && currentTabDef && currentTabDef.team) switchTab('overview');
 }
 function tryUnlock(pass) {
   if (pass === TEAM_PASSPHRASE) {
@@ -952,12 +1070,46 @@ function timeAgo(iso) {
   return `${Math.round(hrs / 24)}${LANG === 'sw' ? ' siku' : 'd'}`;
 }
 
+// Slow/flaky mobile data is common in the field — without a timeout, a
+// fetch that never resolves (rather than erroring) leaves the loading
+// spinner running forever with no way out. fetchTimeout() aborts and
+// throws after LOAD_TIMEOUT_MS so load() always reaches its catch block.
+const LOAD_TIMEOUT_MS = 12000;
+function fetchTimeout(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LOAD_TIMEOUT_MS);
+  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+function showLoadError() {
+  const el = document.getElementById('page-loading');
+  el.innerHTML = `<div class="loading-txt">${t('load_failed')}</div>
+    <button class="report-btn" id="retry-load-btn">🔄 ${t('retry')}</button>`;
+  el.hidden = false;
+  document.getElementById('retry-load-btn').onclick = () => {
+    el.innerHTML = `<div class="spinner"></div><div class="loading-bar"><div class="loading-bar-fill"></div></div><div class="loading-txt">${t('page_loading')}</div>`;
+    load();
+  };
+}
+// An offline-cached summary from an older deploy may lack round keys the
+// current code expects (e.g. 'pilot'); fill any missing ones with empty
+// buckets so a stale copy degrades to "no data" instead of throwing.
+function normalizeSummary(d) {
+  const blank = () => ({ reading: [0, 0, 0, 0], arithmetic: [0, 0, 0, 0], n: 0 });
+  const fill = (o) => { Object.keys(ROUND_META).forEach(k => { if (!o[k]) o[k] = blank(); }); };
+  Object.values(d.by_year || {}).forEach(Y => {
+    fill(Y.rounds || (Y.rounds = {}));
+    Object.values(Y.by_grade || {}).forEach(fill);
+    Object.values(Y.schools || {}).forEach(sc => Object.values(sc.grades || {}).forEach(fill));
+  });
+  return d;
+}
 async function load() {
   applyStaticText();
   try {
-    const res = await fetch('/api/summary');
+    const res = await fetchTimeout('/api/summary');
     const fromCache = res.headers.get('X-Soma-Cache') === 'hit';
-    DATA = await res.json();
+    DATA = normalizeSummary(await res.json());
+    document.getElementById('page-loading').hidden = true;
     const badge = document.getElementById('status-badge');
     if (DATA.status === 'ok') {
       if (fromCache) {
@@ -977,9 +1129,11 @@ async function load() {
     }
   } catch (err) {
     document.getElementById('status-badge').textContent = t('status_error');
+    showLoadError();
+    return;
   }
   try {
-    const res2 = await fetch('/api/insights');
+    const res2 = await fetchTimeout('/api/insights');
     const ins = await res2.json();
     // Cached insights from an older schema version (e.g. pre-bilingual, or
     // missing fields a newer prompt introduced) get discarded rather than

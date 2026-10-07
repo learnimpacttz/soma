@@ -1,0 +1,374 @@
+<title>Landing Page Quick Answers</title>
+<style>
+/* layout: stacked question cards, each a single quick-pick control, ending in a live-generated copyable answer summary */
+:root{
+  --bg:#F4F4F4; --surface:#FFFFFF; --surface-2:#ECEFF4; --line:#DCE1EA;
+  --ink:#22262F; --ink-dim:#5A6478; --ink-faint:#8891A8;
+  --navy:#354062; --teal:#5EA6B8; --gold:#FFC650;
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#15181F; --surface:#1D222C; --surface-2:#262C38; --line:#323A4A;
+    --ink:#E9ECF3; --ink-dim:#AEB6C7; --ink-faint:#7E8699;
+    --navy:#7E93C9; --teal:#6FC2D6; --gold:#FFC650;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#15181F; --surface:#1D222C; --surface-2:#262C38; --line:#323A4A;
+  --ink:#E9ECF3; --ink-dim:#AEB6C7; --ink-faint:#7E8699;
+  --navy:#7E93C9; --teal:#6FC2D6; --gold:#FFC650;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  padding-inline:20px; padding-block:28px 140px;
+}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+
+h1{
+  font-family:'Manrope',-apple-system,sans-serif;
+  font-size:clamp(22px,4.5vw,30px); font-weight:800; letter-spacing:-.01em;
+  color:var(--navy); text-wrap:balance; margin:0;
+}
+.sub{color:var(--ink-dim); font-size:14px; line-height:1.55; max-width:62ch}
+.sub b{color:var(--ink)}
+
+.progress{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-faint)}
+.progress .track{flex:1;height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.progress .fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--navy));border-radius:99px;transition:width .25s ease;width:0%}
+.progress .count{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px 20px; display:flex; flex-direction:column; gap:12px;
+  box-shadow:0 1px 2px rgba(20,24,34,.04);
+}
+.card.done{border-color:color-mix(in srgb, var(--teal) 55%, var(--line))}
+.q-head{display:flex; align-items:baseline; gap:10px}
+.q-num{
+  font-family:'Manrope',sans-serif; font-weight:800; font-size:12px; color:var(--surface);
+  background:var(--navy); width:22px;height:22px;min-width:22px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center; font-variant-numeric:tabular-nums;
+}
+.q-title{font-family:'Manrope',sans-serif; font-weight:700; font-size:15.5px; color:var(--ink)}
+.q-hint{font-size:12.5px; color:var(--ink-faint); line-height:1.5; margin-left:32px}
+
+.options{display:flex; flex-direction:column; gap:7px; margin-left:32px}
+.opt{
+  display:flex; align-items:flex-start; gap:10px; padding:10px 12px;
+  border:1px solid var(--line); border-radius:10px; cursor:pointer;
+  background:var(--surface); transition:border-color .15s, background .15s;
+}
+.opt:hover{border-color:var(--teal)}
+.opt input{margin-top:2px; accent-color:var(--navy); flex-shrink:0}
+.opt .label{font-size:13.5px; line-height:1.45}
+.opt .label b{font-weight:600}
+.opt .label small{display:block;color:var(--ink-faint);font-size:11.5px;margin-top:1px}
+.opt:has(input:checked){border-color:var(--navy); background:color-mix(in srgb, var(--navy) 6%, var(--surface))}
+:root[data-theme="dark"] .opt:has(input:checked), @media (prefers-color-scheme:dark){.opt:has(input:checked){background:color-mix(in srgb, var(--teal) 14%, var(--surface))}}
+
+textarea, input[type=text]{
+  margin-left:32px; font:inherit; font-size:13.5px; color:var(--ink);
+  background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+  padding:10px 12px; resize:vertical; width:calc(100% - 32px);
+}
+textarea{min-height:54px}
+textarea:focus, input[type=text]:focus, .opt input:focus-visible{outline:2px solid var(--teal); outline-offset:1px}
+
+.school-table{margin-left:32px; border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.school-row{display:grid; grid-template-columns:1.4fr 1fr 70px; gap:8px; padding:7px 12px; font-size:12.5px; align-items:center}
+.school-row.head{background:var(--surface-2); font-weight:700; color:var(--ink-dim); font-size:10.5px; text-transform:uppercase; letter-spacing:.04em}
+.school-row+.school-row{border-top:1px solid var(--line)}
+.pill{font-size:10px; font-weight:700; padding:2px 7px; border-radius:99px; justify-self:start}
+.pill.has{background:color-mix(in srgb, var(--teal) 22%, transparent); color:var(--navy)}
+.pill.no{background:var(--surface-2); color:var(--ink-faint)}
+
+.footer-bar{
+  position:fixed; left:0; right:0; bottom:0; padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -4px 18px rgba(20,24,34,.08);
+}
+.footer-inner{max-width:720px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.btn{
+  font-family:'Manrope',sans-serif; font-weight:700; font-size:13.5px; cursor:pointer;
+  border:none; border-radius:10px; padding:11px 18px; color:#fff; background:var(--navy);
+  display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent; color:var(--navy); border:1px solid var(--line)}
+:root[data-theme="dark"] .btn.ghost, @media (prefers-color-scheme:dark){.btn.ghost{color:var(--ink)}}
+.footer-note{font-size:11.5px; color:var(--ink-faint); flex:1; min-width:180px}
+
+.summary{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px 20px;
+}
+.summary h2{font-family:'Manrope',sans-serif; font-size:14px; color:var(--navy); margin:0 0 10px}
+.summary pre{
+  font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; line-height:1.65;
+  white-space:pre-wrap; word-break:break-word; color:var(--ink-dim); margin:0;
+  max-height:0; overflow:hidden; transition:max-height .25s ease;
+}
+.summary.open pre{max-height:900px}
+.summary .toggle{font-size:12px; color:var(--teal); cursor:pointer; font-weight:600}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<div class="wrap">
+  <div>
+    <h1>Landing Page — Quick Answers</h1>
+    <p class="sub">Eight questions from our last round on the SOMA dashboard redesign. Tap through, type where needed, then hit <b>Copy my answers</b> at the bottom and paste the result back in chat.</p>
+  </div>
+
+  <div class="progress">
+    <span class="count" id="progressCount">0 / 8</span>
+    <div class="track"><div class="fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- Q1 -->
+  <div class="card" data-q="1">
+    <div class="q-head"><span class="q-num">1</span><span class="q-title">Statement &amp; voice</span></div>
+    <p class="q-hint">The one-line statement under the SOMA name on the landing page — the "political" sentence for leaders, donors and visitors.</p>
+    <textarea data-field="statement" placeholder="e.g. Every child reading and doing arithmetic at the right level, by the right grade — Kibaha's answer to early dropout and grade repeating."></textarea>
+    <div class="options" data-group="voice">
+      <label class="opt"><input type="radio" name="voice" value="Kibaha District &amp; Municipal Councils"><span class="label"><b>Kibaha District &amp; Municipal Councils</b><small>Spoken as the councils' own programme</small></span></label>
+      <label class="opt"><input type="radio" name="voice" value="LearnImpact"><span class="label"><b>LearnImpact</b><small>Spoken as LearnImpact's programme</small></span></label>
+      <label class="opt"><input type="radio" name="voice" value="Both (joint)"><span class="label"><b>Both, jointly</b><small>A shared statement, both named</small></span></label>
+    </div>
+  </div>
+
+  <!-- Q2 -->
+  <div class="card" data-q="2">
+    <div class="q-head"><span class="q-num">2</span><span class="q-title">District vitals</span></div>
+    <p class="q-hint">Pick up to 4 numbers for the landing page's top row.</p>
+    <div class="options" data-group="vitals" data-max="4" data-type="checkbox">
+      <label class="opt"><input type="checkbox" value="Children assessed"><span class="label">Children assessed</span></label>
+      <label class="opt"><input type="checkbox" value="Schools reporting (e.g. 2 of 10)"><span class="label">Schools reporting <small>e.g. "2 of 10"</small></span></label>
+      <label class="opt"><input type="checkbox" value="% On Track — Reading"><span class="label">% On Track — Reading</span></label>
+      <label class="opt"><input type="checkbox" value="% On Track — Arithmetic"><span class="label">% On Track — Arithmetic</span></label>
+      <label class="opt"><input type="checkbox" value="Wards covered"><span class="label">Wards covered</span></label>
+      <label class="opt"><input type="checkbox" value="Enumerators trained"><span class="label">Enumerators trained</span></label>
+    </div>
+    <input type="text" data-field="vitals_other" placeholder="Other number (optional)">
+  </div>
+
+  <!-- Q3 -->
+  <div class="card" data-q="3">
+    <div class="q-head"><span class="q-num">3</span><span class="q-title">School list</span></div>
+    <p class="q-hint">The 10 schools on file. 2 have data so far (Pilot 2026, 360 records).</p>
+    <div class="school-table" id="schoolTable"></div>
+    <div class="options" data-group="comingsoon">
+      <label class="opt"><input type="radio" name="comingsoon" value="Yes, show as coming soon"><span class="label"><b>Show "coming soon"</b> for the 8 without data yet</span></label>
+      <label class="opt"><input type="radio" name="comingsoon" value="No, hide schools with no data"><span class="label"><b>Hide them</b> until they have data</span></label>
+    </div>
+    <input type="text" data-field="school_corrections" placeholder="Corrections to any school name or ward (optional)">
+  </div>
+
+  <!-- Q4 -->
+  <div class="card" data-q="4">
+    <div class="q-head"><span class="q-num">4</span><span class="q-title">School page access</span></div>
+    <p class="q-hint">Who can open a school's results page.</p>
+    <div class="options" data-group="access">
+      <label class="opt"><input type="radio" name="access" value="Open to everyone"><span class="label"><b>Open to everyone</b><small>No login — simplest, same as today</small></span></label>
+      <label class="opt"><input type="radio" name="access" value="Unique link per school"><span class="label"><b>Unique link per school</b><small>Share the link with that school only</small></span></label>
+      <label class="opt"><input type="radio" name="access" value="PIN per school"><span class="label"><b>PIN per school</b><small>Short code the school enters</small></span></label>
+      <label class="opt"><input type="radio" name="access" value="Not sure — leave open for now"><span class="label"><b>Not sure yet</b><small>Leave it open, decide later</small></span></label>
+    </div>
+  </div>
+
+  <!-- Q5 -->
+  <div class="card" data-q="5">
+    <div class="q-head"><span class="q-num">5</span><span class="q-title">Names inside each group</span></div>
+    <p class="q-hint">In the protected teacher view only — never on the public pages.</p>
+    <div class="options" data-group="names">
+      <label class="opt"><input type="radio" name="names" value="Yes, show child names"><span class="label"><b>Yes</b><small>Teachers see which child is in which group</small></span></label>
+      <label class="opt"><input type="radio" name="names" value="No, counts only"><span class="label"><b>No</b><small>Counts and percentages only, no names</small></span></label>
+      <label class="opt"><input type="radio" name="names" value="Not sure yet"><span class="label"><b>Not sure yet</b></span></label>
+    </div>
+  </div>
+
+  <!-- Q6 -->
+  <div class="card" data-q="6">
+    <div class="q-head"><span class="q-num">6</span><span class="q-title">Unlisted children's codes</span></div>
+    <p class="q-hint">34% of September's records are children not on the roster, coded "-99" with no persistent ID.</p>
+    <div class="options" data-group="codes">
+      <label class="opt"><input type="radio" name="codes" value="Team assigns a code after each visit"><span class="label"><b>Team assigns a code after each visit</b><small>Recommended — no form change needed</small></span></label>
+      <label class="opt"><input type="radio" name="codes" value="Assigned at the point of testing instead"><span class="label"><b>Assigned at the point of testing</b><small>Needs a small change to the KoBo form</small></span></label>
+    </div>
+    <input type="text" data-field="codes_other" placeholder="Other approach (optional)">
+  </div>
+
+  <!-- Q7 -->
+  <div class="card" data-q="7">
+    <div class="q-head"><span class="q-num">7</span><span class="q-title">Partner footer</span></div>
+    <p class="q-hint">Names to credit in the landing page footer, in the order you want them shown.</p>
+    <input type="text" data-field="partners" placeholder="e.g. LearnImpact, Kibaha District Council, Kibaha Municipal Council">
+  </div>
+
+  <!-- Q8 -->
+  <div class="card" data-q="8">
+    <div class="q-head"><span class="q-num">8</span><span class="q-title">Ward view</span></div>
+    <p class="q-hint">A page grouping schools by ward, for WEOs.</p>
+    <div class="options" data-group="wardview">
+      <label class="opt"><input type="radio" name="wardview" value="Build it now, with the landing redesign"><span class="label"><b>Build it now</b></span></label>
+      <label class="opt"><input type="radio" name="wardview" value="Later"><span class="label"><b>Later</b></span></label>
+      <label class="opt"><input type="radio" name="wardview" value="Not needed"><span class="label"><b>Not needed</b></span></label>
+    </div>
+  </div>
+
+  <div class="summary" id="summaryBox">
+    <h2>
+      <span class="toggle" id="summaryToggle">Show answer summary ▾</span>
+    </h2>
+    <pre id="summaryText"></pre>
+  </div>
+</div>
+
+<div class="footer-bar">
+  <div class="footer-inner">
+    <span class="footer-note" id="footerNote">Your answers stay on this page until you copy them.</span>
+    <button class="btn ghost" id="clearBtn" type="button">Clear</button>
+    <button class="btn" id="copyBtn" type="button">📋 Copy my answers</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var SCHOOLS = [
+    ['Mwendapole','Kibaha',true],['Miswe','Mbwawa',true],['Mailimoja','Mailimoja',false],
+    ['Lulanzi','Picha ya Ndege',false],['Kidimu','Pangani',false],['Galagaza','Msangani',false],
+    ['Bokotimiza','Tumbi B',false],['Misugusugu','Misugusugu',false],['Lumumba','Pangani',false],
+    ['Visiga','Visiga',false]
+  ];
+  var table = document.getElementById('schoolTable');
+  var rows = '<div class="school-row head"><span>School</span><span>Ward</span><span>Data</span></div>';
+  SCHOOLS.forEach(function(s){
+    rows += '<div class="school-row"><span>'+s[0]+'</span><span>'+s[1]+'</span>'+
+      '<span class="pill '+(s[2]?'has':'no')+'">'+(s[2]?'Has data':'Not yet')+'</span></div>';
+  });
+  table.innerHTML = rows;
+
+  var STORE_KEY = 'soma_landing_quick_answers_v1';
+  function loadState(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
+  function saveState(s){ try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch(e){} }
+  var state = loadState();
+
+  var fields = document.querySelectorAll('[data-field]');
+  fields.forEach(function(el){
+    var k = el.getAttribute('data-field');
+    if (state[k]) el.value = state[k];
+    el.addEventListener('input', function(){ state[k] = el.value; saveState(state); update(); });
+  });
+
+  var radioGroups = document.querySelectorAll('.options[data-group]:not([data-type])');
+  radioGroups.forEach(function(group){
+    var key = group.getAttribute('data-group');
+    var inputs = group.querySelectorAll('input[type=radio]');
+    inputs.forEach(function(inp){
+      if (state[key] === inp.value) inp.checked = true;
+      inp.addEventListener('change', function(){ state[key] = inp.value; saveState(state); update(); });
+    });
+  });
+
+  var checkGroup = document.querySelector('.options[data-group="vitals"]');
+  var maxVitals = parseInt(checkGroup.getAttribute('data-max'), 10);
+  var vitalInputs = checkGroup.querySelectorAll('input[type=checkbox]');
+  vitalInputs.forEach(function(inp){
+    if (state.vitals && state.vitals.indexOf(inp.value) > -1) inp.checked = true;
+    inp.addEventListener('change', function(){
+      var checked = Array.prototype.filter.call(vitalInputs, function(i){ return i.checked; });
+      if (checked.length > maxVitals) {
+        inp.checked = false;
+        footerNote.textContent = 'Pick up to ' + maxVitals + ' vitals only.';
+        setTimeout(function(){ footerNote.textContent = 'Your answers stay on this page until you copy them.'; }, 2200);
+        return;
+      }
+      state.vitals = checked.map(function(i){ return i.value; });
+      saveState(state); update();
+    });
+  });
+
+  var footerNote = document.getElementById('footerNote');
+  var progressFill = document.getElementById('progressFill');
+  var progressCount = document.getElementById('progressCount');
+  var summaryText = document.getElementById('summaryText');
+  var summaryBox = document.getElementById('summaryBox');
+  var summaryToggle = document.getElementById('summaryToggle');
+
+  var QUESTIONS = [
+    { n:1, title:'Statement & voice', test: function(){ return !!state.statement && !!state.voice; },
+      text: function(){ return state.statement ? '1. Statement (' + (state.voice||'voice not set') + '):\\n   "' + state.statement + '"' : null; } },
+    { n:2, title:'District vitals', test: function(){ return state.vitals && state.vitals.length>0; },
+      text: function(){ var v=(state.vitals||[]).slice(); if(state.vitals_other) v.push(state.vitals_other); return v.length? '2. District vitals: ' + v.join(', ') : null; } },
+    { n:3, title:'School list', test: function(){ return !!state.comingsoon; },
+      text: function(){ var t='3. Schools without data: ' + (state.comingsoon||'(not answered)'); if(state.school_corrections) t+='\\n   Corrections: '+state.school_corrections; return t; } },
+    { n:4, title:'School page access', test: function(){ return !!state.access; },
+      text: function(){ return state.access ? '4. School page access: ' + state.access : null; } },
+    { n:5, title:'Names in groups', test: function(){ return !!state.names; },
+      text: function(){ return state.names ? '5. Names inside groups: ' + state.names : null; } },
+    { n:6, title:'Unlisted children codes', test: function(){ return !!state.codes || !!state.codes_other; },
+      text: function(){ return (state.codes||state.codes_other) ? '6. "-99" codes: ' + (state.codes || state.codes_other) : null; } },
+    { n:7, title:'Partner footer', test: function(){ return !!state.partners; },
+      text: function(){ return state.partners ? '7. Partner footer: ' + state.partners : null; } },
+    { n:8, title:'Ward view', test: function(){ return !!state.wardview; },
+      text: function(){ return state.wardview ? '8. Ward view: ' + state.wardview : null; } },
+  ];
+
+  function update(){
+    var done = 0;
+    QUESTIONS.forEach(function(q){
+      var card = document.querySelector('.card[data-q="'+q.n+'"]');
+      var ok = q.test();
+      card.classList.toggle('done', ok);
+      if (ok) done++;
+    });
+    progressCount.textContent = done + ' / ' + QUESTIONS.length;
+    progressFill.style.width = (done / QUESTIONS.length * 100) + '%';
+    var lines = QUESTIONS.map(function(q){ return q.text(); }).filter(Boolean);
+    summaryText.textContent = lines.length ? lines.join('\\n\\n') : 'Nothing answered yet.';
+  }
+
+  summaryToggle.addEventListener('click', function(){
+    var open = summaryBox.classList.toggle('open');
+    summaryToggle.textContent = open ? 'Hide answer summary ▴' : 'Show answer summary ▾';
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    state = {};
+    saveState(state);
+    fields.forEach(function(el){ el.value=''; });
+    document.querySelectorAll('input[type=radio],input[type=checkbox]').forEach(function(i){ i.checked=false; });
+    update();
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function(){
+    var text = summaryText.textContent;
+    function done(ok){
+      footerNote.textContent = ok ? 'Copied — paste it back in chat.' : 'Select the text above and copy it manually.';
+      setTimeout(function(){ footerNote.textContent = 'Your answers stay on this page until you copy them.'; }, 2500);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){ done(true); }).catch(function(){
+        summaryBox.classList.add('open'); summaryToggle.textContent='Hide answer summary ▴';
+        var range=document.createRange(); range.selectNode(summaryText);
+        var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        done(false);
+      });
+    } else {
+      summaryBox.classList.add('open'); summaryToggle.textContent='Hide answer summary ▴';
+      var range=document.createRange(); range.selectNode(summaryText);
+      var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      done(false);
+    }
+  });
+
+  update();
+})();
+</script>

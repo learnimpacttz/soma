@@ -46,7 +46,7 @@ export function aggregate(results) {
     const computed = computeRound(startTime || r['_submission_time']);
     if (computed) {
       const expectedManual = manualRoundKey(manualType);
-      if (expectedManual && expectedManual !== computed.round && computed.round !== 'pilot') {
+      if (expectedManual && computed.round !== 'pilot' && expectedManual !== computed.round) {
         roundMismatches++;
         flags.push({
           severity: 'med',

@@ -10,9 +10,14 @@ binding = "ASSETS"
 binding = "DASHBOARD_KV"
 id = "d14888c609ac45ed8ba64b2a73538c1c"
 
-# Every 30 min. No-op until KOBO_ASSET_ID + KOBO_TOKEN are both set.
+# Every 30 min, 08:00-18:00 East Africa Time (UTC+3, no DST) only — cron
+# times below are UTC, so that's 05:00-15:00 UTC. Two expressions cover it
+# exactly: the first fires on the half-hour through 17:30 EAT, the second
+# adds the single 18:00 EAT run without also firing at 18:30.
+# No-op until KOBO_ASSET_ID + KOBO_TOKEN are both set. Change this window by
+# editing the hour ranges below (keep both in UTC) and redeploying.
 [triggers]
-crons = ["*/30 * * * *"]
+crons = ["0,30 5-14 * * *", "0 15 * * *"]
 
 # Not secrets — safe to set here directly once the real KoBo form exists.
 # Token goes in via `wrangler secret put KOBO_TOKEN`, never here.

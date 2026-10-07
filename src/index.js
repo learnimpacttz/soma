@@ -38,16 +38,9 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    if (url.pathname === '/api/data') {
-      const stored = await env.DASHBOARD_KV.get('data', 'json');
-      return Response.json(
-        stored || {
-          status: env.KOBO_ASSET_ID ? 'pending_first_fetch' : 'not_configured',
-          total_records: 0,
-          results: [],
-        }
-      );
-    }
+    // /api/data (raw KoBo records: child names, GPS, enumerators) used to be
+    // served publicly here. Nothing in the dashboard needs it, so it is gone;
+    // read the raw copy straight from KV with wrangler when an admin needs it.
 
     if (url.pathname === '/api/summary') {
       const stored = await env.DASHBOARD_KV.get('summary', 'json');
@@ -67,7 +60,11 @@ export default {
     // Doesn't touch KOBO_TOKEN client-side; the fetch stays server-side.
     if (url.pathname === '/api/refresh' && request.method === 'POST') {
       const result = await refreshData(env);
-      return Response.json(result, { status: result.ok ? 200 : 502 });
+      // Never echo the raw records back — they contain child names and GPS.
+      const safe = result.ok
+        ? { ok: true, total_records: result.payload.total_records, fetched_at: result.payload.fetched_at }
+        : { ok: false, reason: result.reason };
+      return Response.json(safe, { status: result.ok ? 200 : 502 });
     }
 
     // TEMPORARY — demo-data seeding for reviewing the dashboard with more

@@ -33,11 +33,11 @@ export const OUTLIER_NAME = { sw: 'Waliovuka Kiwango', en: 'Beyond Standard' };
 // group name so it's never just an abstract label (ask: "be clear at which
 // learning skill we are communicating our benchmark").
 export const READING_SKILL = {
-  sw: ['bado hajasoma silabi', 'anasoma silabi', 'anasoma maneno', 'anasoma aya kwa ufasaha'],
+  sw: ['bado hawajasoma silabi', 'wanasoma silabi', 'wanasoma maneno', 'wanasoma aya kwa ufasaha'],
   en: ['not yet reading syllables', 'reading syllables', 'reading words', 'reading a paragraph fluently'],
 };
 export const ARITH_SKILL = {
-  sw: ['bado hajatambua namba', 'anatambua namba', 'anajumlisha', 'anatoa'],
+  sw: ['bado hawajatambua namba', 'wanatambua namba', 'wanajumlisha', 'wanatoa'],
   en: ['not yet recognizing numbers', 'recognizing numbers', 'can add', 'can subtract'],
 };
 export const READING_OUTLIER_SKILL = { sw: 'anasoma hadithi', en: 'reading a full story' };
