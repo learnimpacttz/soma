@@ -1,7 +1,7 @@
 import { fetchKoboData } from './kobo.js';
 import { aggregate } from './aggregate.js';
 import { generateInsights, INSIGHTS_SCHEMA_VERSION } from './insights.js';
-import { resolveChildIdentities, childrenRegistryToCsv } from './children.js';
+import { resolveChildIdentities, childrenRegistryToCsv, latestRecord } from './children.js';
 import { buildSnapshot } from './snapshot.js';
 
 // Real server-side team auth, replacing the old client-side-only
@@ -191,9 +191,10 @@ export default {
       if (!schoolId) return Response.json({ ok: false, reason: 'school_id required' }, { status: 400 });
       const registry = (await env.DASHBOARD_KV.get('children_registry', 'json')) || {};
       const students = Object.entries(registry)
-        .filter(([, c]) => c.school_id === schoolId && c.records && c.records.length)
+        .filter(([, c]) => c.school_id === schoolId)
         .map(([id, c]) => {
-          const latest = [...c.records].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          const latest = latestRecord(c);
+          if (!latest) return null;
           return {
             id,
             name: c.name || null,
@@ -204,7 +205,8 @@ export default {
             last_assessed: latest.date,
             visits: c.records.length,
           };
-        });
+        })
+        .filter(Boolean);
       return Response.json({ ok: true, school_id: schoolId, students });
     }
 

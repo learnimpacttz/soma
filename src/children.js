@@ -28,6 +28,21 @@ function normalizeName(name) {
   return (name || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+// Kept in sync with GROUP_NAMES in public/index.html and public/report.html
+// (duplicated there, not imported — those are client-side files served
+// statically, this runs in the Worker). Swahili only: this CSV is an
+// internal deliverable for Michael's own data team, same language as the
+// rest of the admin-facing tooling.
+const GROUP_NAMES_SW = ['Wanaoanza', 'Wanaochipukia', 'Wanaoendelea', 'Waliofikia Kiwango'];
+
+// A child's current ability is their MOST RECENT record, not their first —
+// shared by the CSV export below and src/index.js's /api/admin/school-roster
+// route, so "latest" means the same thing in both places.
+export function latestRecord(child) {
+  if (!child.records || !child.records.length) return null;
+  return [...child.records].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+}
+
 // Builds/updates the private child registry from this refresh's raw KoBo
 // records, carrying forward IDs already minted in a previous refresh.
 // `previousRegistry` is the registry object as last stored in KV (or {}
@@ -108,12 +123,22 @@ export function resolveChildIdentities(results, previousRegistry) {
 }
 
 // CSV for the internal team's download — the only place a child's name is
-// ever exposed. Includes a `needs_review` column: schools/grades with more
-// than one off-roster child sharing a first name are flagged, since exact
-// matching can't tell two same-named classmates apart from a surname-less
-// name field — the team should check these by hand.
+// ever exposed. Includes grade/ability columns (added 2026-10-08) so the
+// data team can merge this against their own pre-existing roster
+// identification data (by `soma_id` for roster children, which IS the
+// student_code already on that roster) before a report goes out with
+// real names — this file is the join key side of that merge, not a
+// finished report itself. Includes a `needs_review` column: schools/
+// grades with more than one off-roster child sharing a first name are
+// flagged, since exact matching can't tell two same-named classmates
+// apart from a surname-less name field — the team should check these by
+// hand.
 export function childrenRegistryToCsv(registry) {
-  const rows = [['soma_id', 'name', 'school_id', 'origin', 'first_seen', 'visits', 'needs_review']];
+  const rows = [[
+    'soma_id', 'name', 'school_id', 'grade', 'origin',
+    'reading_level', 'reading_group', 'arithmetic_level', 'arithmetic_group',
+    'last_assessed', 'first_seen', 'visits', 'needs_review',
+  ]];
   const sameNameCount = {};
   for (const [somaId, child] of Object.entries(registry)) {
     if (child.origin !== 'off_roster' || !child.name) continue;
@@ -123,8 +148,14 @@ export function childrenRegistryToCsv(registry) {
   for (const [somaId, child] of Object.entries(registry)) {
     const key = child.name ? `${child.school_id}|${normalizeName(child.name)}` : null;
     const needsReview = key && sameNameCount[key] > 1;
+    const latest = latestRecord(child);
+    const readingLevel = latest ? latest.reading_level : '';
+    const arithLevel = latest ? latest.arithmetic_level : '';
     rows.push([
-      somaId, child.name || '', child.school_id, child.origin, child.first_seen || '',
+      somaId, child.name || '', child.school_id, latest ? latest.grade : '', child.origin,
+      readingLevel, readingLevel !== '' ? GROUP_NAMES_SW[readingLevel] : '',
+      arithLevel, arithLevel !== '' ? GROUP_NAMES_SW[arithLevel] : '',
+      latest ? latest.date : '', child.first_seen || '',
       child.records.length, needsReview ? 'yes' : 'no',
     ]);
   }
