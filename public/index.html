@@ -96,7 +96,29 @@ a{color:#5EA6B8}a:hover{color:#354062}
 .access-line{font-size:11px;color:#9aa4b8;margin-bottom:16px;padding-left:2px}
 .access-line b{color:#5a6478;font-weight:600}
 
-.school-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.school-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.school-row-wrap:last-child .school-snapshot{border-bottom:none}
+.school-snapshot{padding:10px 2px 18px;border-bottom:1px solid #f0f0f0}
+.snap-grade-block{margin-bottom:18px}
+.snap-grade-block:last-child{margin-bottom:0}
+.snap-grade-hdr{font-size:12.5px;font-weight:800;color:#354062;background:#F4F4F4;padding:5px 9px;border-radius:7px;display:inline-block;margin-bottom:6px}
+.snap-section-label{font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#7c869c;margin:14px 0 6px;padding-top:10px;border-top:1px dashed #eef1f6}
+.snap-section-label:first-of-type{border-top:none;padding-top:0}
+.snap-action-group{margin-bottom:8px;font-size:11px}
+.snap-action-group b{font-size:9.5px;letter-spacing:.3px;color:#354062}
+.snap-action-count{font-size:9.5px;color:#9aa4b8;font-weight:600}
+.snap-action-group ul{margin:3px 0 0 16px;padding:0;color:#5a6478;line-height:1.5}
+.snap-movement-row{display:flex;gap:14px;font-size:12px;font-weight:700;padding:3px 0 2px}
+.snap-movement-row .up{color:#2d6a7d}
+.snap-movement-row .same{color:#8a8478}
+.snap-movement-row .down{color:#BE6243}
+.rec-cat{padding:10px 0;border-bottom:1px solid #f0f0f0}
+.rec-cat:last-child{border-bottom:none}
+.rec-cat-title{font-size:11.5px;font-weight:800;color:#354062;margin-bottom:6px}
+.rec-row{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:12px}
+.rec-rank{width:18px;height:18px;border-radius:50%;background:#FFC650;color:#354062;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rec-school{flex:1;font-weight:600;color:#354062}
+.rec-metric{font-weight:800;color:#5EA6B8}
 .school-row:last-child{border-bottom:none}
 .school-name{font-size:12px;font-weight:700;color:#354062;flex:1;min-width:0}
 .school-ward{font-size:9px;color:#b7bfd0;font-weight:400}
@@ -231,7 +253,13 @@ a{color:#5EA6B8}a:hover{color:#354062}
 
       <div class="card">
         <div class="ct"><span data-t="ct_find_school"></span></div>
+        <div class="intro-line" style="margin:0 0 12px;font-size:10.5px" data-t="find_school_tap_hint"></div>
         <div id="find-school"></div>
+      </div>
+
+      <div class="card">
+        <div class="ct"><span data-t="ct_recognition"></span></div>
+        <div id="recognition"></div>
       </div>
 
       <div class="card leaders-card">
@@ -351,6 +379,12 @@ const T = {
     statement_line: 'LearnImpact kupitia mpango wa SOMA inasaidia shule za msingi kumfundisha kila mtoto stadi za msingi za KUSOMA, KUANDIKA na KUHESABU (KKK) kwa kuzingatia kiwango halisi cha uwezo wake ili kutatua changamoto ya wanafunzi kukariri madarasa na kuacha shule mapema.',
     journey_note: 'Kila mtoto anapitia <b>hatua nne</b> za kujifunza mwaka mzima — kutoka <b>Wanaoanza</b> hadi <b>Waliofikia Kiwango</b>. Lengo la programu ni kila mtoto kufika hatua ya mwisho katika darasa lake.',
     ct_find_school: '🏫 Tafuta Shule Yako', ct_leaders: '📊 Kwa Viongozi na Wadau',
+    find_school_tap_hint: 'Gusa jina la shule kuona matokeo, hatua za kuchukua, na yaliyobadilika.',
+    ct_recognition: '🏆 Utambuzi', snap_found: 'Tulichokuta', snap_do: 'Hatua za Kuchukua Sasa',
+    snap_changed: 'Yaliyobadilika Tangu Ziara Iliyopita',
+    snap_changed_pending: 'Bado hazijafikia ziara mbili kuonyesha mabadiliko — itaonekana baada ya ziara inayofuata.',
+    rec_participation: 'Ushiriki Kamili (wanafunzi wote wameorodheshwa)', rec_no_one_left: 'Hakuna Aliyeachwa Nyuma',
+    rec_pending: 'Itaonekana baada ya ziara ya pili.',
     tab_trends_plain: 'Mwenendo', tab_schools_plain: 'Shule',
     find_school_empty: 'Hakuna shule yenye takwimu bado.',
     ct_journey: 'Safari ya Kujifunza', ct_by_grade: 'kwa darasa',
@@ -393,6 +427,12 @@ const T = {
     statement_line: 'LearnImpact, through the SOMA programme, helps primary schools teach every child the foundational skills of READING, WRITING and ARITHMETIC (3Rs), matched to their real ability level, to address the challenge of students repeating grades and leaving school early.',
     journey_note: 'Every child moves through <b>four stages</b> of learning across the year — from <b>Starting Out</b> to <b>On Track</b>. The programme\'s goal is every child reaching the final stage for their grade.',
     ct_find_school: '🏫 Find Your School', ct_leaders: '📊 For Leaders & Partners',
+    find_school_tap_hint: 'Tap a school\'s name to see its results, actions to take, and what has changed.',
+    ct_recognition: '🏆 Recognition', snap_found: 'What We Found', snap_do: 'What To Do Now',
+    snap_changed: 'What Changed Since Last Visit',
+    snap_changed_pending: 'Not enough visits yet to show change — this will appear after the next visit.',
+    rec_participation: 'Full Participation (every child on the roster)', rec_no_one_left: 'No One Left Behind',
+    rec_pending: 'Will appear after the second visit.',
     tab_trends_plain: 'Trends', tab_schools_plain: 'Schools',
     find_school_empty: 'No schools have data yet.',
     ct_journey: 'Learning Journey', ct_by_grade: 'by grade',
@@ -563,6 +603,8 @@ const TEAM_PASSPHRASE = 'soma-kibaha-2026';
 const INSIGHTS_SCHEMA_VERSION = 6;
 let DATA = null;
 let INSIGHTS = null;
+let SNAPSHOT = null;
+let openSnapshotSchool = null;
 let INSIGHTS_STALE = false;
 let currentGrade = null;
 let currentTab = 'overview';
@@ -664,15 +706,101 @@ function renderFindSchool() {
   // contains a school with zero records, so there's no separate "hide
   // schools with no data" filter to maintain; it falls out of the data shape.
   el.innerHTML = schools.length ? schools.map(([id, s]) => `
-    <div class="school-row">
-      <div class="school-name">${s.name}<div class="school-ward">${s.ward || ''}</div></div>
-      <button class="report-btn" style="padding:6px 11px;font-size:10.5px" onclick="openReport('school','${id}')">📄 <span>${t('btn_school_report')}</span></button>
+    <div class="school-row-wrap">
+      <div class="school-row" onclick="toggleSchoolSnapshot('${id}')">
+        <div class="school-name">${s.name}<div class="school-ward">${s.ward || ''}</div></div>
+        <button class="report-btn" style="padding:6px 11px;font-size:10.5px" onclick="event.stopPropagation();openReport('school','${id}')">📄 <span>${t('btn_school_report')}</span></button>
+      </div>
+      <div id="snapshot-${id}" class="school-snapshot" hidden></div>
     </div>`).join('') : `<div class="empty">${t('find_school_empty')}</div>`;
+  if (openSnapshotSchool && schools.some(([id]) => id === openSnapshotSchool)) renderSchoolSnapshot(openSnapshotSchool);
+}
+
+function toggleSchoolSnapshot(schoolId) {
+  const prevId = openSnapshotSchool;
+  if (prevId) {
+    const prevEl = document.getElementById(`snapshot-${prevId}`);
+    if (prevEl) { prevEl.hidden = true; prevEl.innerHTML = ''; }
+  }
+  if (prevId === schoolId) { openSnapshotSchool = null; return; }
+  openSnapshotSchool = schoolId;
+  renderSchoolSnapshot(schoolId);
+}
+
+// Only prints actions for groups that actually have children in them.
+function schoolActionsHtml(bucket, subject) {
+  if (!bucket || !bucket.n) return '';
+  const names = GROUP_NAMES[LANG];
+  let html = '';
+  for (let i = 0; i < 4; i++) {
+    if (!bucket[i]) continue;
+    html += `<div class="snap-action-group"><b>${names[i].toUpperCase()}</b> <span class="snap-action-count">(${bucket[i]})</span><ul>`;
+    GUIDANCE[subject][i][LANG].forEach(a => { html += `<li>${a}</li>`; });
+    html += '</ul></div>';
+  }
+  return html;
+}
+
+function snapMovementHtml(movement) {
+  if (!movement || !movement.n) return `<div class="empty" style="padding:8px 0;text-align:left">${t('snap_changed_pending')}</div>`;
+  return `<div class="snap-movement-row"><span class="up">▲ ${movement.up}</span><span class="same">— ${movement.same}</span><span class="down">▼ ${movement.down}</span></div>`;
+}
+
+function renderSchoolSnapshot(schoolId) {
+  const el = document.getElementById(`snapshot-${schoolId}`);
+  if (!el) return;
+  el.hidden = false;
+  const Y = yearData();
+  const s = Y && Y.schools[schoolId];
+  if (!s) { el.innerHTML = `<div class="empty">${t('empty_no_data')}</div>`; return; }
+  const schoolSnap = SNAPSHOT && SNAPSHOT.by_school[schoolId];
+  let html = '';
+  Object.entries(s.grades).sort().forEach(([g, rs]) => {
+    const round = bestAvailableRound(rs, currentYear);
+    const current = rs[round];
+    const readingBucket = current.reading.reduce((o, v, i) => (o[i] = v, o), { n: current.n });
+    const arithBucket = current.arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: current.n });
+    html += `<div class="snap-grade-block"><div class="snap-grade-hdr">${t('lbl_grade')} ${g}</div>`;
+    html += `<div class="snap-section-label">${t('snap_found')}</div>`;
+    html += `<div class="subj-label">${t('lbl_reading')}</div>${journeyHtml(readingBucket, READING_SKILL)}`;
+    html += `<div class="subj-label">${t('lbl_arithmetic')}</div>${journeyHtml(arithBucket, ARITH_SKILL)}`;
+    const readingActions = schoolActionsHtml(readingBucket, 'reading');
+    const arithActions = schoolActionsHtml(arithBucket, 'arithmetic');
+    if (readingActions || arithActions) {
+      html += `<div class="snap-section-label">${t('snap_do')}</div>`;
+      if (readingActions) html += `<div class="subj-label">${t('lbl_reading')}</div>${readingActions}`;
+      if (arithActions) html += `<div class="subj-label">${t('lbl_arithmetic')}</div>${arithActions}`;
+    }
+    const gradeSnap = schoolSnap && schoolSnap.by_grade[g];
+    html += `<div class="snap-section-label">${t('snap_changed')}</div>`;
+    html += `<div class="subj-label">${t('lbl_reading')}</div>${snapMovementHtml(gradeSnap && gradeSnap.reading)}`;
+    html += `<div class="subj-label">${t('lbl_arithmetic')}</div>${snapMovementHtml(gradeSnap && gradeSnap.arithmetic)}`;
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderRecognition() {
+  const el = document.getElementById('recognition');
+  if (!el) return;
+  if (!SNAPSHOT) { el.innerHTML = `<div class="empty">${t('empty_no_data')}</div>`; return; }
+  const cats = [
+    { label: t('rec_participation'), data: SNAPSHOT.recognition.full_participation, metric: (x) => `${100 - x.off_roster_rate}%` },
+    { label: t('rec_no_one_left'), data: SNAPSHOT.recognition.no_one_left_behind, metric: (x) => `${x.rate}%` },
+  ];
+  el.innerHTML = cats.map(cat => `
+    <div class="rec-cat">
+      <div class="rec-cat-title">${cat.label}</div>
+      ${cat.data && cat.data.length
+        ? cat.data.slice(0, 3).map((x, i) => `<div class="rec-row"><span class="rec-rank">${i + 1}</span><span class="rec-school">${x.school_name}</span><span class="rec-metric">${cat.metric(x)}</span></div>`).join('')
+        : `<div class="empty" style="padding:6px 0;text-align:left">${t('rec_pending')}</div>`}
+    </div>`).join('');
 }
 
 function renderOverview() {
   const Y = yearData();
   renderFindSchool();
+  renderRecognition();
   if (!Y) { document.getElementById('ov-kpis').innerHTML = `<div class="empty">${t('empty_no_data')}</div>`; return; }
   const seq = roundsForYear(currentYear);
   const firstRound = seq[0];
@@ -1150,6 +1278,12 @@ async function load() {
       INSIGHTS_STALE = true;
     }
     renderInsights();
+  } catch (e) {}
+  try {
+    const res3 = await fetchTimeout('/api/snapshot');
+    SNAPSHOT = await res3.json();
+    renderFindSchool();
+    renderRecognition();
   } catch (e) {}
 }
 if (isTeamUnlocked()) setTeamUnlocked(true);

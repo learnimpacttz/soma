@@ -78,6 +78,30 @@ const GROUP_NAMES = {
   en: ['Starting Out', 'Emerging', 'Progressing', 'On Track'],
 };
 const LEVEL_COLORS = ['#BE6243', '#FFC650', '#5EA6B8', '#354062'];
+// Kept identical to GUIDANCE in index.html's Teaching Guide tab — this is
+// the same content printed into a physical, offline-usable handout.
+const GUIDANCE = {
+  reading: [
+    { sw: ['Fanya mazoezi ya sauti za herufi kila siku kwa dakika 10-15', 'Tumia kadi za herufi, au uandike herufi mchangani/ubaoni', 'Unganisha sauti mbili kuwa silabi rahisi (mf. b+a=ba)'],
+      en: ['Practice letter sounds daily for 10-15 minutes', 'Use letter cards, or write letters in sand/on the board', 'Blend two sounds into a simple syllable (e.g. b+a=ba)'] },
+    { sw: ['Soma silabi kwa sauti kubwa kila siku', 'Unganisha silabi mbili kuwa neno rahisi (mf. ba+ba=baba)', 'Cheza mchezo wa kupanga kadi za silabi kuwa maneno'],
+      en: ['Read syllables aloud every day', 'Combine two syllables into a simple word (e.g. ba+ba=baba)', 'Play a card game arranging syllables into words'] },
+    { sw: ['Soma orodha ya maneno kwa ufasaha kila siku', 'Soma sentensi fupi pamoja na mwenzake (jozi)', 'Eleza maana ya sentensi kwa maneno yake mwenyewe'],
+      en: ['Read a word list fluently every day', 'Read short sentences in pairs with a classmate', "Explain a sentence's meaning in their own words"] },
+    { sw: ['Soma aya na ujibu maswali ya ufahamu', 'Soma kwa sauti mbele ya darasa au kikundi', 'Mpe kazi ya ziada: kusoma hadithi fupi kwa kujitegemea'],
+      en: ['Read a paragraph and answer comprehension questions', 'Read aloud to the class or a small group', 'Give extension work: reading a short story independently'] },
+  ],
+  arithmetic: [
+    { sw: ['Hesabu vitu halisi kila siku (mawe, maharage, vidole)', 'Tambua namba 1-9 kwa kadi au kwenye ubao'],
+      en: ['Count real objects daily (stones, beans, fingers)', 'Recognize numbers 1-9 using cards or the board'] },
+    { sw: ['Tambua namba 1-99, panga kwa mpangilio', 'Linganisha namba mbili — ipi kubwa, ipi ndogo'],
+      en: ['Recognize numbers 1-99, arrange them in order', 'Compare two numbers — which is bigger, which is smaller'] },
+    { sw: ['Fanya mazoezi ya kujumlisha kila siku, kuanzia vitu halisi kisha namba', 'Tatua maswali rahisi ya mafumbo yanayohusu kujumlisha'],
+      en: ['Practice addition daily, starting with real objects then numbers', 'Solve simple word problems involving addition'] },
+    { sw: ['Fanya mazoezi ya kutoa, ikiwemo kukopa namba', 'Changanya kujumlisha na kutoa kwenye maswali ya mafumbo'],
+      en: ['Practice subtraction, including borrowing', 'Combine addition and subtraction in word problems'] },
+  ],
+};
 const ROUND_META = {
   pilot: { number: null, technical: { sw: 'Pilot', en: 'Pilot' }, shortTechnical: { sw: 'Pilot', en: 'Pilot' } },
   round1: { number: 1, technical: { sw: 'Msingi', en: 'Baseline' }, shortTechnical: { sw: 'MS', en: 'BL' } },
@@ -125,6 +149,9 @@ const STR = LANG === 'en' ? {
   footer: 'LearnImpact · SOMA Programme · Kibaha District & Municipal Councils',
   no_data: 'No data available yet.', trend: 'Trend', back: 'Dashboard',
   loading: 'Generating your report…',
+  what_to_do: 'What To Do Now', what_changed: 'What Changed Since Last Visit',
+  changed_pending: 'Not enough visits yet to show change for this grade — this will appear after the next visit.',
+  moved_up: 'moved up a level', stayed: 'stayed at the same level', moved_down: 'moved down a level',
 } : {
   title_school: 'Ripoti ya Shule', title_district: 'Ripoti ya Wilaya',
   generated: 'Imetengenezwa', round: 'Ziara', students: 'Watoto Waliopimwa',
@@ -134,6 +161,9 @@ const STR = LANG === 'en' ? {
   footer: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
   no_data: 'Hakuna takwimu bado.', trend: 'Mwenendo', back: 'Dashibodi',
   loading: 'Inatengeneza ripoti yako…',
+  what_to_do: 'Hatua za Kuchukua Sasa', what_changed: 'Yaliyobadilika Tangu Ziara Iliyopita',
+  changed_pending: 'Hazijafikia ziara mbili bado kuonyesha mabadiliko kwa darasa hili — hii itaonekana baada ya ziara inayofuata.',
+  moved_up: 'wamepanda kiwango', stayed: 'wamebaki kiwango hicho hicho', moved_down: 'wameshuka kiwango',
 };
 
 function pct(c, n) { return n > 0 ? Math.round((c / n) * 100) : 0; }
@@ -145,6 +175,25 @@ function journeyHtml(bucket) {
   }
   return h + '</div>';
 }
+// Only prints actions for groups that actually have children in them —
+// no point handing a teacher instructions for an empty group.
+function actionsHtml(bucket, subject) {
+  if (!bucket || !bucket.n) return '';
+  let h = '';
+  for (let i = 0; i < 4; i++) {
+    if (!bucket[i]) continue;
+    h += `<div style="margin-bottom:8px"><b style="font-size:10px">${GROUP_NAMES[LANG][i]}</b><ul style="margin:3px 0 0 16px;padding:0;font-size:10px;color:#4a5468">`;
+    GUIDANCE[subject][i][LANG].forEach(a => { h += `<li style="margin-bottom:2px">${a}</li>`; });
+    h += '</ul></div>';
+  }
+  return h;
+}
+function movementHtml(movement, subject) {
+  if (!movement || !movement.n) return `<div style="font-size:10px;color:#9aa4b8">${STR.changed_pending}</div>`;
+  const rows = [['up', STR.moved_up], ['same', STR.stayed], ['down', STR.moved_down]];
+  return `<table style="margin-bottom:6px"><tr><th>${STR[subject]}</th><th>${STR.n_col}</th></tr>` +
+    rows.map(([k, label]) => `<tr><td>${label}</td><td>${movement[k]} / ${movement.n}</td></tr>`).join('') + '</table>';
+}
 
 async function build() {
   document.documentElement.lang = LANG;
@@ -153,6 +202,9 @@ async function build() {
   document.getElementById('loading-txt').textContent = STR.loading;
   const res = await fetch('/api/summary');
   const d = await res.json();
+  const snapRes = await fetch('/api/snapshot');
+  const snap = await snapRes.json().catch(() => null);
+  const schoolSnap = snap && TYPE === 'school' ? snap.by_school[SCHOOL_ID] : null;
   const now = new Date().toLocaleDateString(LANG === 'sw' ? 'sw-TZ' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
   document.getElementById('hmeta').innerHTML = `${STR.generated}: ${now}<br><span style="font-size:8.5px">${LANG === 'sw' ? 'Changanua kwa dashibodi hai' : 'Scan for live dashboard'}</span>`;
   const dashboardUrl = `${location.origin}/?lang=${LANG}`;
@@ -174,13 +226,26 @@ async function build() {
       const round = bestAvailableRound(rs, year);
       html += `<h2>${STR.grade} ${g} — ${roundLabel(round)}</h2>`;
       html += `<div class="kg"><div class="kc"><div class="kl">${STR.students}</div><div class="kv">${rs[round].n}</div></div></div>`;
-      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:5px">${STR.reading}</div>${journeyHtml(rs[round].reading.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n }))}`;
-      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:10px 0 5px">${STR.arithmetic}</div>${journeyHtml(rs[round].arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n }))}`;
+      const readingBucket = rs[round].reading.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n });
+      const arithBucket = rs[round].arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n });
+      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:5px">${STR.reading}</div>${journeyHtml(readingBucket)}`;
+      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:10px 0 5px">${STR.arithmetic}</div>${journeyHtml(arithBucket)}`;
       if (seq[0] && rs[seq[0]] && rs[seq[0]].n && seq[1] && rs[seq[1]] && rs[seq[1]].n) {
         html += `<h2>${STR.trend}</h2><table><tr><th>${STR.grade}</th><th>${roundLabelCompact(seq[0])}</th><th>${roundLabelCompact(seq[1])}</th><th>${STR.change}</th></tr>`;
         const b = pct(rs[seq[0]].reading[3], rs[seq[0]].n), m = pct(rs[seq[1]].reading[3], rs[seq[1]].n);
         html += `<tr><td>${STR.reading}</td><td>${b}%</td><td>${m}%</td><td>${m - b >= 0 ? '+' : ''}${m - b}</td></tr></table>`;
       }
+      const readingActions = actionsHtml(readingBucket, 'reading');
+      const arithActions = actionsHtml(arithBucket, 'arithmetic');
+      if (readingActions || arithActions) {
+        html += `<h2>${STR.what_to_do}</h2>`;
+        if (readingActions) html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:4px">${STR.reading}</div>${readingActions}`;
+        if (arithActions) html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:8px 0 4px">${STR.arithmetic}</div>${arithActions}`;
+      }
+      const gradeSnap = schoolSnap && schoolSnap.by_grade[g];
+      html += `<h2>${STR.what_changed}</h2>`;
+      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:4px">${STR.reading}</div>${movementHtml(gradeSnap && gradeSnap.reading, 'reading')}`;
+      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:8px 0 4px">${STR.arithmetic}</div>${movementHtml(gradeSnap && gradeSnap.arithmetic, 'arithmetic')}`;
     });
     document.getElementById('content').innerHTML = html;
   } else {

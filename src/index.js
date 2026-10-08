@@ -2,6 +2,7 @@ import { fetchKoboData } from './kobo.js';
 import { aggregate } from './aggregate.js';
 import { generateInsights, INSIGHTS_SCHEMA_VERSION } from './insights.js';
 import { resolveChildIdentities, childrenRegistryToCsv } from './children.js';
+import { buildSnapshot } from './snapshot.js';
 
 // Shared by the cron trigger and the on-demand /api/refresh route, so both
 // paths do exactly the same fetch-and-store — no duplicated logic to drift.
@@ -35,9 +36,14 @@ async function refreshData(env) {
     const previousRegistry = (await env.DASHBOARD_KV.get('children_registry', 'json')) || {};
     const registry = resolveChildIdentities(results, previousRegistry);
 
+    // Public, name-free — derived FROM the private registry but never
+    // includes a name or raw child ID itself, safe for /api/snapshot.
+    const snapshot = buildSnapshot(registry);
+
     await env.DASHBOARD_KV.put('data', JSON.stringify(payload));
     await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));
     await env.DASHBOARD_KV.put('children_registry', JSON.stringify(registry));
+    await env.DASHBOARD_KV.put('snapshot', JSON.stringify(snapshot));
     return { ok: true, payload };
   } catch (err) {
     return { ok: false, reason: err.message };
@@ -127,6 +133,14 @@ export default {
           'content-disposition': `attachment; filename="soma-children-${new Date().toISOString().slice(0, 10)}.csv"`,
         },
       });
+    }
+
+    // Public and name-free — per-school movement (same children, across
+    // visits) and recognition rankings. See src/snapshot.js for what this
+    // deliberately does NOT include yet (anything needing 2+ real visits).
+    if (url.pathname === '/api/snapshot') {
+      const stored = await env.DASHBOARD_KV.get('snapshot', 'json');
+      return Response.json(stored || { by_school: {}, recognition: { full_participation: null, no_one_left_behind: null } });
     }
 
     if (url.pathname === '/api/insights') {
