@@ -40,14 +40,34 @@ td{padding:6px 8px;border-bottom:1px solid #eef1f6}
 .unlock-strip{background:#FFF9EE;border:1px dashed #d9a53d;border-radius:8px;padding:11px 14px;font-size:10.5px;color:#8a6d1f;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .unlock-btn{background:#354062;color:#fff;border:none;border-radius:6px;padding:8px 13px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
 @media print{ .unlock-strip{display:none} }
-.roster-note{font-size:9.5px;color:#9aa4b8;font-style:italic;margin-bottom:10px}
-.group-callout{border:1px solid #eef1f6;border-left:4px solid #354062;border-radius:8px;padding:12px 14px;margin-bottom:10px;background:#fafbfc;break-inside:avoid}
-.group-title{font-size:11.5px;font-weight:800;margin-bottom:7px}
-.cta-list{margin:0 0 10px 16px;padding:0;font-size:10.5px;color:#4a5468;line-height:1.55}
-.cta-list li{margin-bottom:3px}
+.roster-note{font-size:9.5px;color:#9aa4b8;font-style:italic;margin-top:10px}
 .student-chip-wrap{display:flex;flex-wrap:wrap;gap:5px}
 .student-chip{font-size:9.5px;background:#eef1f6;color:#354062;border-radius:12px;padding:3px 10px;font-weight:700}
 .student-chip.coded{background:#fff;border:1px dashed #d7dbe6;color:#5a6478;font-weight:600;font-style:italic}
+
+/* ---- Teacher Action Card (2026-10-08 redesign): one short, scannable
+   card per grade, built to be read in under a minute and acted on
+   immediately — NOT the long aggregate-chart report this replaced. ---- */
+.ht-summary{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:22px}
+.ht-summary caption{text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:#354062;margin-bottom:8px;caption-side:top}
+.ht-summary th{background:#354062;color:#fff;padding:6px 8px;font-size:8.5px;text-transform:uppercase}
+.ht-summary td{padding:6px 8px;border-bottom:1px solid #eef1f6}
+.action-card{break-inside:avoid}
+.ac-hdr{margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #eef1f6}
+.ac-school{font-size:16px;font-weight:800;color:#354062}
+.ac-sub{font-size:10.5px;color:#9aa4b8;margin-top:2px}
+.subject-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.subject-card{min-width:0}
+.subject-title{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#354062;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #eef1f6}
+.diagnosis{font-size:10px;color:#4a5468;margin-bottom:9px;font-style:italic}
+.grp-block{border:1px solid #eef1f6;border-left:4px solid #354062;border-radius:7px;padding:9px 10px;margin-bottom:7px;background:#fafbfc;break-inside:avoid}
+.grp-hdr{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.grp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.grp-name{font-size:10.5px;font-weight:800;color:#354062;flex:1}
+.grp-count{font-size:10px;font-weight:800;color:#354062;background:#eef1f6;border-radius:9px;padding:1px 7px;flex-shrink:0}
+.grp-action{font-size:10px;color:#4a5468;margin-bottom:7px;line-height:1.4}
+.page-break{break-before:page;page-break-before:always}
+@media (max-width:600px){ .subject-grid{grid-template-columns:1fr} }
 .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 10px;gap:16px}
 .spinner{width:36px;height:36px;border:4px solid #eef1f6;border-top-color:#5EA6B8;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -121,9 +141,15 @@ const ROUND_META = {
 };
 const qs = new URLSearchParams(location.search);
 const LANG = qs.get('lang') === 'en' ? 'en' : 'sw';
-const TYPE = qs.get('type') === 'school' ? 'school' : 'district';
+const TYPE = ['school', 'batch'].includes(qs.get('type')) ? qs.get('type') : 'district';
 const SCHOOL_ID = qs.get('id');
 const YEAR_PARAM = qs.get('year');
+// Batch mode: scope=district (every school) or scope=ward&ward=<name> —
+// same short action-card format as a single school, repeated with a
+// page break between each, so one Print/Save-as-PDF produces one file
+// covering a whole ward or the whole district at once.
+const BATCH_SCOPE = qs.get('scope') === 'ward' ? 'ward' : 'district';
+const BATCH_WARD = qs.get('ward');
 
 function roundsForYear(year) {
   // Everything in 2026 is the Pilot; Visit #1/#2/#3 numbering starts in 2027.
@@ -140,11 +166,6 @@ function roundLabel(key) {
   const m = ROUND_META[key];
   return LANG === 'en' && key !== 'pilot' ? `${roundTop(key)} (${m.technical.en})` : roundTop(key);
 }
-// Compact single-line form for tight spaces, e.g. table headers.
-function roundLabelCompact(key) {
-  const m = ROUND_META[key];
-  return LANG === 'en' && key !== 'pilot' ? `${roundTop(key)} - ${m.shortTechnical.en}` : roundTop(key);
-}
 function bestAvailableRound(rounds, year) {
   const seq = roundsForYear(year);
   for (let i = seq.length - 1; i >= 0; i--) if (rounds[seq[i]] && rounds[seq[i]].n > 0) return seq[i];
@@ -160,16 +181,15 @@ const STR = LANG === 'en' ? {
   footer: 'LearnImpact · SOMA Programme · Kibaha District & Municipal Councils',
   no_data: 'No data available yet.', trend: 'Trend', back: 'Dashboard',
   loading: 'Generating your report…',
-  what_to_do: 'What To Do Now', what_changed: 'What Changed Since Last Visit',
-  changed_pending: 'Not enough visits yet to show change for this grade — this will appear after the next visit.',
-  moved_up: 'moved up a level', stayed: 'stayed at the same level', moved_down: 'moved down a level',
-  student_detail: 'Student-Level Detail', reading_groups: 'Reading Groups', arith_groups: 'Arithmetic Groups',
   roster_note: "Off-roster students are shown by name. Roster students are shown by their assessment code — match it against your school's own class roster to find the name.",
   unlock_cta: '🔐 Add Student Names & Ability (Admin)',
   unlock_msg: 'This report can include every student by name/code and ability group — add the Admin passphrase to load it.',
   unlock_prompt: 'Enter the Admin passphrase to load student names & ability:',
   unlock_wrong: 'Incorrect passphrase.', unlock_err: 'Network error — try again.',
-  students_count: 'students',
+  students_count: 'students', title_batch: 'Batch School Reports',
+  ht_summary: 'For the Headteacher — School Summary', on_track: 'On Track',
+  largest_group: (n, total, name) => `Largest group: <b>${name}</b> (${n} of ${total} students).`,
+  batch_label: (ward) => ward ? `Ward: ${ward}` : 'Whole District',
 } : {
   title_school: 'Ripoti ya Shule', title_district: 'Ripoti ya Wilaya',
   generated: 'Imetengenezwa', round: 'Ziara', students: 'Watoto Waliopimwa',
@@ -179,16 +199,15 @@ const STR = LANG === 'en' ? {
   footer: 'LearnImpact · Programu ya SOMA · Halmashauri ya Wilaya na Manispaa ya Kibaha',
   no_data: 'Hakuna takwimu bado.', trend: 'Mwenendo', back: 'Dashibodi',
   loading: 'Inatengeneza ripoti yako…',
-  what_to_do: 'Hatua za Kuchukua Sasa', what_changed: 'Yaliyobadilika Tangu Ziara Iliyopita',
-  changed_pending: 'Hazijafikia ziara mbili bado kuonyesha mabadiliko kwa darasa hili — hii itaonekana baada ya ziara inayofuata.',
-  moved_up: 'wamepanda kiwango', stayed: 'wamebaki kiwango hicho hicho', moved_down: 'wameshuka kiwango',
-  student_detail: 'Maelezo ya Kina kwa Mwanafunzi', reading_groups: 'Makundi ya Usomaji', arith_groups: 'Makundi ya Hesabu',
   roster_note: 'Wanafunzi walio nje ya orodha wanaonyeshwa kwa majina yao. Wanafunzi walio katika orodha ya shule wanaonyeshwa kwa namba yao ya tathmini — linganisha na orodha ya shule yako kupata jina.',
   unlock_cta: '🔐 Ongeza Majina na Uwezo wa Wanafunzi (Admin)',
   unlock_msg: 'Ripoti hii inaweza kuonyesha kila mwanafunzi kwa jina/namba na kundi lake la uwezo — weka nenosiri la Admin kuipakia.',
   unlock_prompt: 'Weka nenosiri la Admin kupakia majina na uwezo wa wanafunzi:',
   unlock_wrong: 'Nenosiri si sahihi.', unlock_err: 'Hitilafu ya mtandao — jaribu tena.',
-  students_count: 'wanafunzi',
+  students_count: 'wanafunzi', title_batch: 'Ripoti za Shule kwa Kundi',
+  ht_summary: 'Kwa Mwalimu Mkuu — Muhtasari wa Shule', on_track: 'Waliofikia Kiwango',
+  largest_group: (n, total, name) => `Kundi kubwa zaidi: <b>${name}</b> (wanafunzi ${n} kati ya ${total}).`,
+  batch_label: (ward) => ward ? `Kata: ${ward}` : 'Wilaya Nzima',
 };
 
 function pct(c, n) { return n > 0 ? Math.round((c / n) * 100) : 0; }
@@ -199,25 +218,6 @@ function journeyHtml(bucket) {
     h += `<div class="jstop"><div class="jpct" style="color:${LEVEL_COLORS[i]}">${pct(bucket[i], bucket.n)}%</div><div class="jname">${GROUP_NAMES[LANG][i]}</div></div>`;
   }
   return h + '</div>';
-}
-// Only prints actions for groups that actually have children in them —
-// no point handing a teacher instructions for an empty group.
-function actionsHtml(bucket, subject) {
-  if (!bucket || !bucket.n) return '';
-  let h = '';
-  for (let i = 0; i < 4; i++) {
-    if (!bucket[i]) continue;
-    h += `<div style="margin-bottom:8px"><b style="font-size:10px">${GROUP_NAMES[LANG][i]}</b><ul style="margin:3px 0 0 16px;padding:0;font-size:10px;color:#4a5468">`;
-    GUIDANCE[subject][i][LANG].forEach(a => { h += `<li style="margin-bottom:2px">${a}</li>`; });
-    h += '</ul></div>';
-  }
-  return h;
-}
-function movementHtml(movement, subject) {
-  if (!movement || !movement.n) return `<div style="font-size:10px;color:#9aa4b8">${STR.changed_pending}</div>`;
-  const rows = [['up', STR.moved_up], ['same', STR.stayed], ['down', STR.moved_down]];
-  return `<table style="margin-bottom:6px"><tr><th>${STR[subject]}</th><th>${STR.n_col}</th></tr>` +
-    rows.map(([k, label]) => `<tr><td>${label}</td><td>${movement[k]} / ${movement.n}</td></tr>`).join('') + '</table>';
 }
 
 /* ============================== Student-level detail (Admin-gated) ==============================
@@ -255,42 +255,95 @@ async function unlockAndRebuild() {
     build();
   } catch (e) { alert(STR.unlock_err); }
 }
+// Batch mode verifies against whichever school happens to be first in
+// scope — same idea as unlockAndRebuild, just not tied to one fixed
+// SCHOOL_ID since a batch covers many schools.
+async function unlockAndRebuildBatch(testSchoolId) {
+  const pass = window.prompt(STR.unlock_prompt);
+  if (!pass) return;
+  try {
+    if (testSchoolId) {
+      const r = await fetchSchoolRoster(testSchoolId, pass);
+      if (!r.ok) { alert(STR.unlock_wrong); return; }
+    }
+    sessionStorage.setItem(ADMIN_SESSION_KEY, pass);
+    build();
+  } catch (e) { alert(STR.unlock_err); }
+}
 function studentLabel(s) {
   if (s.name) return `<span class="student-chip">${s.name}</span>`;
   return `<span class="student-chip coded">${s.id}</span>`;
 }
-// Groups a grade's students into the 4 ability groups for ONE subject at
-// a time (reading and arithmetic are grouped separately — a child's
-// reading and arithmetic groups commonly differ, and TaRL-style grouped
-// teaching runs each subject as its own rotation).
-function studentGroupsHtml(students, grade, subject) {
+
+/* ============================== Teacher Action Card ==============================
+   Replaces the old per-grade stack of journey-%-chart + trend table +
+   duplicated "what to do" bullets + movement table + a second copy of
+   the same guidance inside student detail — Michael's own read was that
+   it was "way too long and not instinctive." This is the entire
+   redesign: ONE short card per grade, ONE instruction per ability group
+   (the single highest-leverage action, not a 3-item lesson plan), the
+   class list for that group right under it, nothing else. Aggregate
+   charts/trends move to the headteacher summary table and the district
+   report — a classroom teacher deciding what to do tomorrow doesn't
+   need a percentage trend line. */
+function groupBlockHtml(groupStudents, level, subject) {
+  if (!groupStudents.length) return '';
+  return `<div class="grp-block" style="border-left-color:${LEVEL_COLORS[level]}">
+    <div class="grp-hdr">
+      <span class="grp-dot" style="background:${LEVEL_COLORS[level]}"></span>
+      <span class="grp-name">${GROUP_NAMES[LANG][level]}</span>
+      <span class="grp-count">${groupStudents.length}</span>
+    </div>
+    <div class="grp-action">${GUIDANCE[subject][level][LANG][0]}</div>
+    <div class="student-chip-wrap">${groupStudents.map(studentLabel).join('')}</div>
+  </div>`;
+}
+// Reading and arithmetic are grouped separately — a child's reading and
+// arithmetic ability commonly differ, and TaRL-style grouped teaching
+// runs each subject as its own rotation, not one combined group.
+function subjectCardHtml(students, grade, subject) {
   const levelKey = subject === 'reading' ? 'reading_level' : 'arithmetic_level';
   const gradeStudents = students.filter(s => String(s.grade) === String(grade) && Number.isInteger(s[levelKey]));
   if (!gradeStudents.length) return '';
   const groups = [[], [], [], []];
   gradeStudents.forEach(s => { const lvl = s[levelKey]; if (lvl >= 0 && lvl <= 3) groups[lvl].push(s); });
-  let html = '';
-  for (let i = 0; i < 4; i++) {
-    if (!groups[i].length) continue;
-    html += `<div class="group-callout" style="border-left-color:${LEVEL_COLORS[i]}">
-      <div class="group-title" style="color:${LEVEL_COLORS[i]}">${GROUP_NAMES[LANG][i]} — ${groups[i].length} ${STR.students_count}</div>
-      <ul class="cta-list">${GUIDANCE[subject][i][LANG].map(a => `<li>${a}</li>`).join('')}</ul>
-      <div class="student-chip-wrap">${groups[i].map(studentLabel).join('')}</div>
-    </div>`;
-  }
+  const ranked = groups.map((g, i) => ({ i, n: g.length })).sort((a, b) => b.n - a.n)[0];
+  const diagnosis = ranked && ranked.n ? STR.largest_group(ranked.n, gradeStudents.length, GROUP_NAMES[LANG][ranked.i]) : '';
+  let html = `<div class="subject-card"><div class="subject-title">${STR[subject]}</div>`;
+  if (diagnosis) html += `<div class="diagnosis">${diagnosis}</div>`;
+  for (let i = 0; i < 4; i++) html += groupBlockHtml(groups[i], i, subject);
+  html += '</div>';
   return html;
 }
-function studentDetailHtml(students, grade) {
-  const reading = studentGroupsHtml(students, grade, 'reading');
-  const arithmetic = studentGroupsHtml(students, grade, 'arithmetic');
-  if (!reading && !arithmetic) return '';
-  let html = `<h2>${STR.student_detail}</h2><div class="roster-note">${STR.roster_note}</div>`;
-  if (reading) html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:5px">${STR.reading_groups}</div>${reading}`;
-  if (arithmetic) html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:10px 0 5px">${STR.arith_groups}</div>${arithmetic}`;
-  return html;
+function actionCardHtml(schoolName, ward, grade, n, students) {
+  return `<div class="action-card">
+    <div class="ac-hdr">
+      <div class="ac-school">${schoolName}</div>
+      <div class="ac-sub">${ward ? ward + ' · ' : ''}${STR.grade} ${grade} · ${n} ${STR.students_count}</div>
+    </div>
+    <div class="subject-grid">${subjectCardHtml(students, grade, 'reading')}${subjectCardHtml(students, grade, 'arithmetic')}</div>
+    <div class="roster-note">${STR.roster_note}</div>
+  </div>`;
 }
-function unlockStripHtml() {
-  return `<div class="unlock-strip"><span>${STR.unlock_msg}</span><button class="unlock-btn" onclick="unlockAndRebuild()">${STR.unlock_cta}</button></div>`;
+// One small table, not a chart per grade — leadership/headteacher context
+// belongs in a single glance, not interleaved with the teacher's action
+// cards further down.
+function headteacherSummaryHtml(s, year) {
+  const grades = Object.keys(s.grades).sort();
+  let rows = '';
+  grades.forEach(g => {
+    const round = bestAvailableRound(s.grades[g], year);
+    const rs = s.grades[g][round];
+    if (!rs || !rs.n) return;
+    rows += `<tr><td>${STR.grade} ${g}</td><td>${rs.n}</td><td>${pct(rs.reading[3], rs.n)}%</td><td>${pct(rs.arithmetic[3], rs.n)}%</td></tr>`;
+  });
+  if (!rows) return '';
+  return `<table class="ht-summary"><caption>${STR.ht_summary}</caption>
+    <tr><th>${STR.grade}</th><th>${STR.students}</th><th>${STR.reading} — ${STR.on_track}</th><th>${STR.arithmetic} — ${STR.on_track}</th></tr>
+    ${rows}</table>`;
+}
+function unlockStripHtml(onclickFn) {
+  return `<div class="unlock-strip"><span>${STR.unlock_msg}</span><button class="unlock-btn" onclick="${onclickFn}">${STR.unlock_cta}</button></div>`;
 }
 
 async function build() {
@@ -304,9 +357,6 @@ async function build() {
   if (loadingTxt) loadingTxt.textContent = STR.loading;
   const res = await fetch('/api/summary');
   const d = await res.json();
-  const snapRes = await fetch('/api/snapshot');
-  const snap = await snapRes.json().catch(() => null);
-  const schoolSnap = snap && TYPE === 'school' ? snap.by_school[SCHOOL_ID] : null;
   const now = new Date().toLocaleDateString(LANG === 'sw' ? 'sw-TZ' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
   document.getElementById('hmeta').innerHTML = `${STR.generated}: ${now}<br><span style="font-size:8.5px">${LANG === 'sw' ? 'Changanua kwa dashibodi hai' : 'Scan for live dashboard'}</span>`;
   const dashboardUrl = `${location.origin}/?lang=${LANG}`;
@@ -316,7 +366,6 @@ async function build() {
   const year = years.includes(YEAR_PARAM) ? YEAR_PARAM : years[years.length - 1];
   if (!year) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
   const Y = d.by_year[year];
-  const seq = roundsForYear(year);
 
   if (TYPE === 'school') {
     const s = Y.schools[SCHOOL_ID];
@@ -325,32 +374,59 @@ async function build() {
     if (!s) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
     const rosterStudents = await tryFetchRosterSilently(SCHOOL_ID);
     let html = `<h1>${s.name}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${s.ward || ''} · ${year}</div>`;
-    if (!rosterStudents) html += unlockStripHtml();
-    Object.entries(s.grades).sort().forEach(([g, rs]) => {
-      const round = bestAvailableRound(rs, year);
-      html += `<h2>${STR.grade} ${g} — ${roundLabel(round)}</h2>`;
-      html += `<div class="kg"><div class="kc"><div class="kl">${STR.students}</div><div class="kv">${rs[round].n}</div></div></div>`;
-      const readingBucket = rs[round].reading.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n });
-      const arithBucket = rs[round].arithmetic.reduce((o, v, i) => (o[i] = v, o), { n: rs[round].n });
-      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:5px">${STR.reading}</div>${journeyHtml(readingBucket)}`;
-      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:10px 0 5px">${STR.arithmetic}</div>${journeyHtml(arithBucket)}`;
-      if (seq[0] && rs[seq[0]] && rs[seq[0]].n && seq[1] && rs[seq[1]] && rs[seq[1]].n) {
-        html += `<h2>${STR.trend}</h2><table><tr><th>${STR.grade}</th><th>${roundLabelCompact(seq[0])}</th><th>${roundLabelCompact(seq[1])}</th><th>${STR.change}</th></tr>`;
-        const b = pct(rs[seq[0]].reading[3], rs[seq[0]].n), m = pct(rs[seq[1]].reading[3], rs[seq[1]].n);
-        html += `<tr><td>${STR.reading}</td><td>${b}%</td><td>${m}%</td><td>${m - b >= 0 ? '+' : ''}${m - b}</td></tr></table>`;
-      }
-      const readingActions = actionsHtml(readingBucket, 'reading');
-      const arithActions = actionsHtml(arithBucket, 'arithmetic');
-      if (readingActions || arithActions) {
-        html += `<h2>${STR.what_to_do}</h2>`;
-        if (readingActions) html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:4px">${STR.reading}</div>${readingActions}`;
-        if (arithActions) html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:8px 0 4px">${STR.arithmetic}</div>${arithActions}`;
-      }
-      const gradeSnap = schoolSnap && schoolSnap.by_grade[g];
-      html += `<h2>${STR.what_changed}</h2>`;
-      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin-bottom:4px">${STR.reading}</div>${movementHtml(gradeSnap && gradeSnap.reading, 'reading')}`;
-      html += `<div style="font-size:10px;font-weight:700;color:#5a6478;margin:8px 0 4px">${STR.arithmetic}</div>${movementHtml(gradeSnap && gradeSnap.arithmetic, 'arithmetic')}`;
-      if (rosterStudents) html += studentDetailHtml(rosterStudents, g);
+    if (!rosterStudents) html += unlockStripHtml('unlockAndRebuild()');
+    html += headteacherSummaryHtml(s, year);
+    const grades = Object.keys(s.grades).sort();
+    grades.forEach((g, i) => {
+      const round = bestAvailableRound(s.grades[g], year);
+      const n = s.grades[g][round].n;
+      if (!n) return;
+      html += `<div class="${i === 0 ? '' : 'page-break'}">${actionCardHtml(s.name, s.ward, g, n, rosterStudents || [])}</div>`;
+    });
+    document.getElementById('content').innerHTML = html;
+  } else if (TYPE === 'batch') {
+    document.getElementById('tb-title').textContent = STR.title_batch;
+    const scopeLabel = STR.batch_label(BATCH_SCOPE === 'ward' ? BATCH_WARD : null);
+    document.getElementById('hsub').textContent = `${STR.title_batch} — ${scopeLabel} — ${year}`;
+    let schools = Object.entries(Y.schools);
+    if (BATCH_SCOPE === 'ward' && BATCH_WARD) schools = schools.filter(([, s]) => s.ward === BATCH_WARD);
+    schools.sort((a, b) => (a[1].ward || '').localeCompare(b[1].ward || '') || a[1].name.localeCompare(b[1].name));
+    if (!schools.length) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
+
+    let adminKey = sessionStorage.getItem(ADMIN_SESSION_KEY);
+    let html = `<h1>${STR.title_batch}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${scopeLabel} · ${schools.length} ${LANG === 'sw' ? 'shule' : 'schools'} · ${year}</div>`;
+    if (!adminKey) html += unlockStripHtml(`unlockAndRebuildBatch('${schools[0][0]}')`);
+
+    // Fetch every school's roster in parallel rather than one at a time —
+    // a 10-school district batch would otherwise serialize 10 round
+    // trips before anything renders.
+    const rosterMap = {};
+    if (adminKey) {
+      await Promise.all(schools.map(async ([schoolId]) => {
+        const r = await fetchSchoolRoster(schoolId, adminKey);
+        rosterMap[schoolId] = r.ok ? r.students : [];
+      }));
+    }
+
+    // Every grade gets its OWN page, same as single-school mode — the
+    // whole point of a batch PDF is that the ops team can split it back
+    // into individual take-away sheets per teacher, and each action card
+    // already prints its own school/ward/grade header, so pages are
+    // self-identifying once split apart.
+    let isFirstPage = true;
+    schools.forEach(([schoolId, s]) => {
+      const grades = Object.keys(s.grades).sort().filter((g) => {
+        const r = bestAvailableRound(s.grades[g], year);
+        return s.grades[g][r] && s.grades[g][r].n;
+      });
+      if (!grades.length) return;
+      html += `<div class="${isFirstPage ? '' : 'page-break'}">${headteacherSummaryHtml(s, year)}</div>`;
+      isFirstPage = false;
+      grades.forEach((g) => {
+        const round = bestAvailableRound(s.grades[g], year);
+        const n = s.grades[g][round].n;
+        html += `<div class="page-break">${actionCardHtml(s.name, s.ward, g, n, rosterMap[schoolId] || [])}</div>`;
+      });
     });
     document.getElementById('content').innerHTML = html;
   } else {

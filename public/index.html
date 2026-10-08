@@ -425,6 +425,16 @@ a{color:var(--teal)}a:hover{color:var(--ink)}
       </div>
 
       <div class="card">
+        <div class="ct" data-t="ct_batch_export"></div>
+        <div class="intro-line" style="margin:0 0 12px" data-t="batch_export_desc"></div>
+        <div class="gpills" id="batch-ward-pills" style="margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="report-btn" id="batch-ward-btn" onclick="openBatchReport('ward')" disabled>📍 <span data-t="batch_ward_btn"></span></button>
+          <button class="report-btn" onclick="openBatchReport('district')">🗺️ <span data-t="batch_district_btn"></span></button>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="ct" data-t="ct_admin_export"></div>
         <div class="intro-line" style="margin:0 0 12px" data-t="admin_export_desc"></div>
         <button class="report-btn" id="admin-export-btn" onclick="handleAdminExport()" data-t="admin_export_btn"></button>
@@ -498,6 +508,9 @@ const T = {
     lbl_by_grade: 'Kwa Darasa', lbl_by_enumerator: 'Kwa Mtahini', lbl_schools_in_ward: 'Shule katika Kata Hii',
     dq_no_flags_entity: 'Hakuna vibendera kwa huyu/hii.', dq_empty: 'Hakuna takwimu bado.',
     dq_tests_short: 'tathmini', dq_no_match: 'Hakuna linalofanana na utafutaji wako.',
+    ct_batch_export: '📦 Ripoti za Shule kwa Kundi (Batch)',
+    batch_export_desc: 'Tengeneza ripoti fupi za mwalimu — ukurasa mmoja kwa darasa — kwa kata nzima au wilaya nzima mara moja, tayari kuchapisha au kugawa.',
+    batch_ward_btn: 'Tengeneza kwa Kata', batch_district_btn: 'Tengeneza kwa Wilaya Nzima',
     ct_admin_export: '🔐 Pakua Majina ya Wanafunzi (Admin)',
     admin_export_desc: 'CSV yenye majina halisi ya watoto na vitambulisho vyao — kwa timu ya ndani tu, kwa ajili ya ripoti za shule. Inahitaji nenosiri tofauti na la Timu.',
     admin_export_btn: 'Pakua CSV', admin_lock_title: 'Ufikiaji wa Admin',
@@ -562,6 +575,9 @@ const T = {
     lbl_by_grade: 'By Grade', lbl_by_enumerator: 'By Enumerator', lbl_schools_in_ward: 'Schools in This Ward',
     dq_no_flags_entity: 'No flags for this one.', dq_empty: 'No data yet.',
     dq_tests_short: 'tests', dq_no_match: 'Nothing matches your search.',
+    ct_batch_export: '📦 Batch School Reports',
+    batch_export_desc: 'Generate short teacher action reports — one page per grade — for a whole ward or the whole district at once, ready to print or share.',
+    batch_ward_btn: 'Generate for Ward', batch_district_btn: 'Generate for Whole District',
     ct_admin_export: '🔐 Download Student Names (Admin)',
     admin_export_desc: 'A CSV with real children’s names and their IDs — internal team only, for building school reports. Needs a separate passphrase from Team.',
     admin_export_btn: 'Download CSV', admin_lock_title: 'Admin Access',
@@ -1337,6 +1353,42 @@ function renderDQ() {
   renderDQEnumerators();
   renderDQSchools();
   renderDQWards();
+  renderBatchWardPills();
+}
+
+/* ============================== Batch report export ==============================
+   Opens report.html's new type=batch mode in a new tab — one short
+   action-card report per grade, for every school in a ward or the whole
+   district at once, so the team can generate and Print/Save-as-PDF a
+   single file covering many schools instead of one school at a time. */
+let selectedBatchWard = null;
+function renderBatchWardPills() {
+  const el = document.getElementById('batch-ward-pills');
+  if (!el) return;
+  const Y = yearData();
+  const wards = Y ? [...new Set(Object.values(Y.schools).map((s) => s.ward).filter(Boolean))].sort() : [];
+  if (!selectedBatchWard || !wards.includes(selectedBatchWard)) selectedBatchWard = wards[0] || null;
+  el.innerHTML = wards.length
+    ? wards.map((w) => `<button class="gpill ${w === selectedBatchWard ? 'on' : ''}" data-ward="${w}">${w}</button>`).join('')
+    : `<div class="empty" style="padding:0">${t('dq_empty')}</div>`;
+  el.querySelectorAll('.gpill').forEach((btn) => {
+    btn.onclick = () => { selectedBatchWard = btn.dataset.ward; renderBatchWardPills(); };
+  });
+  const wardBtn = document.getElementById('batch-ward-btn');
+  if (wardBtn) {
+    wardBtn.disabled = !selectedBatchWard;
+    wardBtn.style.opacity = selectedBatchWard ? '1' : '.5';
+    wardBtn.style.cursor = selectedBatchWard ? 'pointer' : 'not-allowed';
+  }
+}
+function openBatchReport(scope) {
+  // .html, matching openReport()'s existing convention, not the shorter
+  // /report alias — both work (report.html -> /report is a redirect),
+  // kept consistent with the rest of the file rather than "fixed" here.
+  const url = scope === 'ward'
+    ? `/report.html?type=batch&scope=ward&ward=${encodeURIComponent(selectedBatchWard)}&lang=${LANG}`
+    : `/report.html?type=batch&scope=district&lang=${LANG}`;
+  window.open(url, '_blank');
 }
 
 document.getElementById('dq-search').addEventListener('input', (e) => {
