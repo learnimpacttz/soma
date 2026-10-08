@@ -67,7 +67,7 @@ async function refreshData(env) {
 
     // Public, name-free — derived FROM the private registry but never
     // includes a name or raw child ID itself, safe for /api/snapshot.
-    const snapshot = buildSnapshot(registry);
+    const snapshot = buildSnapshot(registry, summary);
 
     await env.DASHBOARD_KV.put('data', JSON.stringify(payload));
     await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));

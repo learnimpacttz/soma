@@ -4,14 +4,18 @@
 // child ID out of this module; everything it returns is a count.
 //
 // Two distinct kinds of "change" exist in this codebase, deliberately:
-//  - aggregate.js's "Rising Fast" compares the OVERALL % on-track between
-//    two rounds for a school — simple, already built, but can drift if
-//    which children got sampled changes between rounds.
+//  - aggregate.js's "Rising Fast" (public Schools tab) compares the
+//    OVERALL % on-track between two rounds for a school — simple,
+//    already built, but can drift if which children got sampled changes
+//    between rounds.
 //  - This module's "movement" compares the SAME child's level between
 //    their two most recent visits (different rounds, not just different
 //    submissions within one round) — what Michael asked for specifically
 //    ("linking the same students' assessments over time"), more precise,
-//    needs the child-linking registry to exist.
+//    needs the child-linking registry to exist. The Fastest Growth
+//    recognition category below is built on THIS more precise movement
+//    data, not the Rising Fast aggregate — a school can differ between
+//    the two if which children got tested changed between rounds.
 import { ROUND_KEYS, computeRound } from './rounds.js';
 import { SCHOOLS } from './schools.js';
 
@@ -41,7 +45,7 @@ function delta(prevLevel, nowLevel) {
   return 'same';
 }
 
-export function buildSnapshot(registry) {
+export function buildSnapshot(registry, summary) {
   const bySchool = {};
   const schoolParticipation = {};
 
@@ -86,17 +90,61 @@ export function buildSnapshot(registry) {
 
   const hasMovementData = Object.keys(bySchool).length > 0;
   let noOneLeftBehind = null;
+  let fastestGrowth = null;
   if (hasMovementData) {
-    const scored = [];
+    const leftBehindScored = [];
+    const growthScored = [];
     for (const [schoolId, s] of Object.entries(bySchool)) {
-      let up = 0, n = 0;
+      let up = 0, down = 0, n = 0;
       for (const g of Object.values(s.by_grade)) {
         up += g.reading.up + g.arithmetic.up;
+        down += g.reading.down + g.arithmetic.down;
         n += g.reading.n + g.arithmetic.n;
       }
-      if (n > 0) scored.push({ school_id: schoolId, school_name: SCHOOLS[schoolId]?.name || `School ${schoolId}`, rate: Math.round((up / n) * 100) });
+      if (n === 0) continue;
+      const name = SCHOOLS[schoolId]?.name || `School ${schoolId}`;
+      leftBehindScored.push({ school_id: schoolId, school_name: name, rate: Math.round((up / n) * 100) });
+      // Net movement: up minus down as a share of all comparisons — unlike
+      // No One Left Behind (pure up-rate), this also penalizes a school
+      // with a lot of backward movement alongside its forward movement.
+      growthScored.push({ school_id: schoolId, school_name: name, net_rate: Math.round(((up - down) / n) * 100) });
     }
-    noOneLeftBehind = scored.length ? scored.sort((a, b) => b.rate - a.rate) : null;
+    noOneLeftBehind = leftBehindScored.length ? leftBehindScored.sort((a, b) => b.rate - a.rate) : null;
+    fastestGrowth = growthScored.length ? growthScored.sort((a, b) => b.net_rate - a.net_rate) : null;
+  }
+
+  // Consistent Excellence: sustained on-track performance, not a single
+  // good round. Ranked by the WORSE of a school's two most recent rounds
+  // (not the average), so a school that was high then dropped scores
+  // lower than one that held steady — needs real summary data across 2+
+  // rounds for the SAME school, which doesn't exist yet while there's
+  // only Pilot data; returns null rather than a one-round ranking.
+  let consistentExcellence = null;
+  if (summary) {
+    const scored = [];
+    for (const year of summary.years || []) {
+      const Y = summary.by_year[year];
+      for (const [schoolId, school] of Object.entries(Y.schools || {})) {
+        let roundsWithData = [];
+        for (const key of ROUND_KEYS) {
+          let n = 0, top = 0;
+          for (const g of Object.values(school.grades)) {
+            const b = g[key];
+            if (b && b.n) { n += b.n; top += b.reading[3] + b.arithmetic[3]; }
+          }
+          if (n > 0) roundsWithData.push(Math.round((top / (n * 2)) * 100));
+        }
+        if (roundsWithData.length >= 2) {
+          const [prevPct, nowPct] = roundsWithData.slice(-2);
+          scored.push({
+            school_id: schoolId,
+            school_name: SCHOOLS[schoolId]?.name || `School ${schoolId}`,
+            sustained_rate: Math.min(prevPct, nowPct),
+          });
+        }
+      }
+    }
+    consistentExcellence = scored.length ? scored.sort((a, b) => b.sustained_rate - a.sustained_rate) : null;
   }
 
   return {
@@ -104,11 +152,8 @@ export function buildSnapshot(registry) {
     recognition: {
       full_participation: participationRanking.length ? participationRanking : null,
       no_one_left_behind: noOneLeftBehind,
-      // Fastest Growth and Consistent Excellence both need 2+ *rounds* of
-      // real breadth across schools to rank meaningfully, not just 2
-      // records for a handful of individually-retested children — not
-      // built here; the existing "Rising Fast" aggregate on the Schools
-      // tab already covers fastest growth once Visit 2 exists.
+      fastest_growth: fastestGrowth,
+      consistent_excellence: consistentExcellence,
     },
   };
 }
