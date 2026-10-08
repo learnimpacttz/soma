@@ -382,6 +382,11 @@ a{color:var(--teal)}a:hover{color:var(--ink)}
         <div class="ct" data-t="ct_enumerators"></div>
         <div class="tbl-wrap"><table class="tbl" id="enumerator-tbl"></table></div>
       </div>
+      <div class="card">
+        <div class="ct" data-t="ct_admin_export"></div>
+        <div class="intro-line" style="margin:0 0 12px" data-t="admin_export_desc"></div>
+        <button class="report-btn" id="admin-export-btn" onclick="handleAdminExport()" data-t="admin_export_btn"></button>
+      </div>
     </div>
 
     <div class="panel" data-panel="team-insights" hidden>
@@ -401,6 +406,16 @@ a{color:var(--teal)}a:hover{color:var(--ink)}
     <input type="password" id="lock-input" inputmode="text">
     <button id="lock-submit" data-t="lock_btn"></button>
     <div class="lock-err" id="lock-err"></div>
+  </div>
+</div>
+
+<div id="admin-lock-overlay" hidden>
+  <div class="lock-box">
+    <h3>🔐 <span data-t="admin_lock_title"></span></h3>
+    <p data-t="admin_lock_desc"></p>
+    <input type="password" id="admin-lock-input" inputmode="text">
+    <button id="admin-lock-submit" data-t="lock_btn"></button>
+    <div class="lock-err" id="admin-lock-err"></div>
   </div>
 </div>
 
@@ -431,6 +446,10 @@ const T = {
     ct_rounds: 'Ziara za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
     ct_enumerators: 'Mwenendo wa Watahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
     lbl_avg_duration: 'Muda wa Wastani', lbl_off_roster_rate: '% Nje ya Orodha',
+    ct_admin_export: '🔐 Pakua Majina ya Wanafunzi (Admin)',
+    admin_export_desc: 'CSV yenye majina halisi ya watoto na vitambulisho vyao — kwa timu ya ndani tu, kwa ajili ya ripoti za shule. Inahitaji nenosiri tofauti na la Timu.',
+    admin_export_btn: 'Pakua CSV', admin_lock_title: 'Ufikiaji wa Admin',
+    admin_lock_desc: 'Weka nenosiri la Admin kupakua orodha ya majina.',
     kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Waliofikia Kiwango',
     kpi_arith: 'Hesabu — Waliofikia Kiwango', of_schools: 'kati ya shule 10',
     lbl_grade: 'Darasa',
@@ -481,6 +500,10 @@ const T = {
     ct_rounds: 'Assessment Visits', ct_school_grade: 'School × Grade', ct_flags: 'Flags Needing Attention',
     ct_enumerators: 'Enumerator Pace', ct_programme_intel: 'Programme Intelligence', ct_operational_intel: 'Operational Intelligence',
     lbl_avg_duration: 'Avg Duration', lbl_off_roster_rate: '% Off-Roster',
+    ct_admin_export: '🔐 Download Student Names (Admin)',
+    admin_export_desc: 'A CSV with real children’s names and their IDs — internal team only, for building school reports. Needs a separate passphrase from Team.',
+    admin_export_btn: 'Download CSV', admin_lock_title: 'Admin Access',
+    admin_lock_desc: 'Enter the Admin passphrase to download the name list.',
     kpi_students: 'Students Assessed', kpi_schools: 'Schools Reporting', kpi_reading: 'Reading — On Track',
     kpi_arith: 'Arithmetic — On Track', of_schools: 'of 10 schools',
     lbl_grade: 'Grade',
@@ -1264,6 +1287,63 @@ document.getElementById('team-badge-side').addEventListener('click', () => { isT
 document.getElementById('lock-submit').addEventListener('click', () => tryUnlock(document.getElementById('lock-input').value));
 document.getElementById('lock-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(e.target.value); });
 document.getElementById('lock-overlay').addEventListener('click', e => { if (e.target.id === 'lock-overlay') document.getElementById('lock-overlay').hidden = true; });
+
+/* Admin export — a second, higher-privilege secret (ADMIN_KEY), separate
+   from TEAM_SECRET on purpose: team access (enumerator names, DQ) and
+   admin access (real children's names) are different privilege tiers —
+   see reference_soma_dashboard_live_infra memory for why. The CSV comes
+   back as a real HTTP response (needs the X-Admin-Key header, which a
+   plain <a href> can't send), so it's fetched as a blob and handed to
+   the browser as a download rather than linked directly. */
+const ADMIN_SESSION_KEY = 'soma_admin_secret';
+function isAdminUnlocked() { return !!sessionStorage.getItem(ADMIN_SESSION_KEY); }
+function downloadChildrenCsv(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `soma-children-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+async function tryAdminUnlock(pass) {
+  if (!pass) return false;
+  const btn = document.getElementById('admin-lock-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetchTimeout('/api/admin/children-export', { headers: { 'X-Admin-Key': pass } });
+    if (res.ok) {
+      sessionStorage.setItem(ADMIN_SESSION_KEY, pass);
+      document.getElementById('admin-lock-overlay').hidden = true;
+      document.getElementById('admin-lock-err').textContent = '';
+      downloadChildrenCsv(await res.blob());
+      if (btn) btn.disabled = false;
+      return true;
+    }
+  } catch (e) {}
+  document.getElementById('admin-lock-err').textContent = LANG === 'sw' ? 'Nenosiri si sahihi.' : 'Incorrect passphrase.';
+  if (btn) btn.disabled = false;
+  return false;
+}
+function openAdminLock() {
+  document.getElementById('admin-lock-overlay').hidden = false;
+  document.getElementById('admin-lock-input').value = '';
+  document.getElementById('admin-lock-input').focus();
+}
+async function handleAdminExport() {
+  if (isAdminUnlocked()) {
+    try {
+      const res = await fetchTimeout('/api/admin/children-export', { headers: { 'X-Admin-Key': sessionStorage.getItem(ADMIN_SESSION_KEY) } });
+      if (res.ok) { downloadChildrenCsv(await res.blob()); return; }
+      sessionStorage.removeItem(ADMIN_SESSION_KEY); // stored key no longer valid (e.g. reset server-side) — re-prompt below
+    } catch (e) {}
+  }
+  openAdminLock();
+}
+document.getElementById('admin-lock-submit').addEventListener('click', () => tryAdminUnlock(document.getElementById('admin-lock-input').value));
+document.getElementById('admin-lock-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryAdminUnlock(e.target.value); });
+document.getElementById('admin-lock-overlay').addEventListener('click', e => { if (e.target.id === 'admin-lock-overlay') document.getElementById('admin-lock-overlay').hidden = true; });
 
 let tapCount = 0, tapTimer = null;
 document.getElementById('hdr-tap-zone').addEventListener('click', () => {
