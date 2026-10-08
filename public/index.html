@@ -334,7 +334,7 @@ a{color:#5EA6B8}a:hover{color:#354062}
   <div class="lock-box">
     <h3>🔒 <span data-t="lock_title"></span></h3>
     <p data-t="lock_desc"></p>
-    <input type="password" id="lock-input" placeholder="Passphrase" inputmode="text">
+    <input type="password" id="lock-input" inputmode="text">
     <button id="lock-submit" data-t="lock_btn"></button>
     <div class="lock-err" id="lock-err"></div>
   </div>
@@ -367,6 +367,7 @@ const T = {
     btn_district_report: 'Pakua Ripoti ya Wilaya (PDF)', btn_school_report: 'Ripoti ya Shule',
     team_access_line: '<b>Inaonekana kwa:</b> Waratibu · HQ · Uongozi — <b>haionyeshwi hapa:</b> majina ya wanafunzi, nambari pekee',
     lock_title: 'Ufikiaji wa Timu', lock_desc: 'Weka nenosiri kuona takwimu za ndani za programu.', lock_btn: 'Fungua',
+    lock_placeholder: 'Nenosiri',
     page_loading: 'Inapakia takwimu za dashibodi…',
     load_failed: 'Imeshindwa kupakia — mtandao unaweza kuwa dhaifu.', retry: 'Jaribu Tena',
     status_live: 'MUBASHARA', status_connecting: 'INAUNGANISHA…', status_not_configured: 'HAIJAWEKWA', status_error: 'HITILAFU',
@@ -408,6 +409,7 @@ const T = {
     btn_district_report: 'Download District Report (PDF)', btn_school_report: 'School Report',
     team_access_line: '<b>Visible to:</b> Coordinators · HQ · Leadership — <b>never shown here:</b> student names, codes only',
     lock_title: 'Team Access', lock_desc: 'Enter the team passphrase to view internal programme data.', lock_btn: 'Unlock',
+    lock_placeholder: 'Passphrase',
     page_loading: 'Loading dashboard data…',
     load_failed: 'Failed to load — your connection may be weak.', retry: 'Try Again',
     status_live: 'LIVE', status_connecting: 'CONNECTING…', status_not_configured: 'NOT CONFIGURED', status_error: 'ERROR',
@@ -633,6 +635,8 @@ function applyStaticText() {
     const key = el.dataset.t;
     el.innerHTML = t(key);
   });
+  // placeholder text isn't innerHTML, so [data-t] can't set it directly
+  document.getElementById('lock-input').placeholder = t('lock_placeholder');
   document.documentElement.lang = LANG;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
 }

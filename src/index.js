@@ -1,6 +1,7 @@
 import { fetchKoboData } from './kobo.js';
 import { aggregate } from './aggregate.js';
 import { generateInsights, INSIGHTS_SCHEMA_VERSION } from './insights.js';
+import { resolveChildIdentities, childrenRegistryToCsv } from './children.js';
 
 // Shared by the cron trigger and the on-demand /api/refresh route, so both
 // paths do exactly the same fetch-and-store — no duplicated logic to drift.
@@ -26,8 +27,17 @@ async function refreshData(env) {
       fetched_at: payload.fetched_at,
       ...aggregate(results),
     };
+    // Private child-identity registry — resolves/mints persistent IDs for
+    // off-roster children so they can be linked across visits. Never
+    // exposed to the dashboard; only the admin export route below reads
+    // it. Carries forward IDs already minted in the last refresh rather
+    // than starting fresh each time.
+    const previousRegistry = (await env.DASHBOARD_KV.get('children_registry', 'json')) || {};
+    const registry = resolveChildIdentities(results, previousRegistry);
+
     await env.DASHBOARD_KV.put('data', JSON.stringify(payload));
     await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));
+    await env.DASHBOARD_KV.put('children_registry', JSON.stringify(registry));
     return { ok: true, payload };
   } catch (err) {
     return { ok: false, reason: err.message };
@@ -97,6 +107,26 @@ export default {
       await env.DASHBOARD_KV.put('data', JSON.stringify(payload));
       await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));
       return Response.json({ ok: true, total_records: combined.length, demo_records: dummy.length });
+    }
+
+    // Internal-only export: the one place a child's real name is ever
+    // returned. Gated by a real server-side secret (ADMIN_KEY) — the
+    // dashboard's TEAM_PASSPHRASE is cosmetic client-side UI gating, not
+    // real auth, so it can't protect this. Michael sets ADMIN_KEY himself
+    // via `wrangler secret put ADMIN_KEY`; this route 404s until it's set,
+    // same pattern as the other not-yet-rotated secrets on this Worker.
+    if (url.pathname === '/api/admin/children-export') {
+      if (!env.ADMIN_KEY || request.headers.get('X-Admin-Key') !== env.ADMIN_KEY) {
+        return Response.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
+      }
+      const registry = (await env.DASHBOARD_KV.get('children_registry', 'json')) || {};
+      const csv = childrenRegistryToCsv(registry);
+      return new Response(csv, {
+        headers: {
+          'content-type': 'text/csv; charset=utf-8',
+          'content-disposition': `attachment; filename="soma-children-${new Date().toISOString().slice(0, 10)}.csv"`,
+        },
+      });
     }
 
     if (url.pathname === '/api/insights') {
