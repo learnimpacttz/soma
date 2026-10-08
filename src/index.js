@@ -80,9 +80,38 @@ async function refreshData(env) {
     await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));
     await env.DASHBOARD_KV.put('children_registry', JSON.stringify(registry));
     await env.DASHBOARD_KV.put('snapshot', JSON.stringify(snapshot));
+    // Keep the AI insights from going stale on their own — but only spend
+    // an Anthropic call when there's actually something new to say (see
+    // maybeRegenerateInsights below), not on every 30-min cron tick
+    // regardless of whether the data changed.
+    await maybeRegenerateInsights(env, summary);
     return { ok: true, payload };
   } catch (err) {
     return { ok: false, reason: err.message };
+  }
+}
+
+// Auto-regenerates insights whenever the underlying data has actually
+// moved since the last generation (different record count, or an older
+// prompt/schema version) — so insights stay fresh without the 48
+// calls/day a fixed-cadence regeneration would mean regardless of
+// whether anything changed. Runs after every refresh (cron or manual);
+// a failure here never fails the data refresh itself — stale insights
+// are a lesser problem than no data at all.
+async function maybeRegenerateInsights(env, summary) {
+  if (!env.ANTHROPIC_API_KEY) return;
+  if (!summary.years || summary.years.length === 0) return;
+  try {
+    const existing = await env.DASHBOARD_KV.get('insights', 'json');
+    const upToDate = existing && existing.status === 'ok'
+      && existing.based_on_records === summary.total_records
+      && existing.schema_version === INSIGHTS_SCHEMA_VERSION;
+    if (upToDate) return;
+    const result = await generateInsights(summary, env.ANTHROPIC_API_KEY);
+    const stored = { status: 'ok', schema_version: INSIGHTS_SCHEMA_VERSION, generated_at: new Date().toISOString(), based_on_records: summary.total_records, ...result };
+    await env.DASHBOARD_KV.put('insights', JSON.stringify(stored));
+  } catch (err) {
+    console.error(`auto insights regeneration failed: ${err.message}`);
   }
 }
 
