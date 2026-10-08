@@ -173,6 +173,41 @@ export default {
       });
     }
 
+    // Per-student roster + ability detail for one school — what the
+    // printable school report (report.html) uses to build the
+    // name-and-ability-level breakdown teachers act on. Same privilege
+    // tier as children-export (ADMIN_KEY, not TEAM_SECRET) since
+    // off-roster children's real names come back here too. Roster
+    // children (on_roster=1) only ever carry their assessment code, never
+    // a name — the KoBo form deliberately never transmits a roster
+    // child's name, only their pre-assigned code (see src/children.js) —
+    // so `name` is null for them here; report.html shows the code and a
+    // note for schools to match it against their own roster list.
+    if (url.pathname === '/api/admin/school-roster') {
+      if (!env.ADMIN_KEY || request.headers.get('X-Admin-Key') !== env.ADMIN_KEY) {
+        return Response.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
+      }
+      const schoolId = url.searchParams.get('school_id');
+      if (!schoolId) return Response.json({ ok: false, reason: 'school_id required' }, { status: 400 });
+      const registry = (await env.DASHBOARD_KV.get('children_registry', 'json')) || {};
+      const students = Object.entries(registry)
+        .filter(([, c]) => c.school_id === schoolId && c.records && c.records.length)
+        .map(([id, c]) => {
+          const latest = [...c.records].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          return {
+            id,
+            name: c.name || null,
+            origin: c.origin,
+            grade: latest.grade,
+            reading_level: latest.reading_level,
+            arithmetic_level: latest.arithmetic_level,
+            last_assessed: latest.date,
+            visits: c.records.length,
+          };
+        });
+      return Response.json({ ok: true, school_id: schoolId, students });
+    }
+
     // Public and name-free — per-school movement (same children, across
     // visits) and recognition rankings. See src/snapshot.js for what this
     // deliberately does NOT include yet (anything needing 2+ real visits).
