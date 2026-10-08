@@ -51,14 +51,38 @@ const BURST_MIN_COUNT = 3;
 export function aggregate(results) {
   const byYear = {};
   const enumeratorDays = {};
-  const enumeratorDurations = {}; // enumerator -> [{mins, code}]
+  const enumeratorDurations = {}; // enumerator -> [{mins, code, school_id}]
   const enumeratorRoster = {}; // enumerator -> {tested, offRoster}
-  const enumeratorTimestamps = {}; // enumerator -> [ISO string]
+  const enumeratorTimestamps = {}; // enumerator -> [{t, school_id}]
   const formVersionCounts = {};
   const flags = [];
   let missingGrade = 0;
   let missingSchool = 0;
   let roundMismatches = 0;
+
+  // --- HR/logistics drill-down detail for the Data Quality tab. Separate
+  // from the stats above: those exist to FLAG problems, these exist so
+  // the internal team can look up "what has this enumerator/school/ward
+  // actually been doing" at a glance — every school/ward/enumerator that
+  // appears anywhere in the data gets an entry here, flagged or not.
+  // All of it lives under dq, which redactSummaryForPublic() in
+  // src/index.js already strips entirely for unauthenticated requests.
+  const enumeratorDetail = {}; // name -> {n, schools:{id:n}, days:{day:n}, flags:[]}
+  const schoolDetail = {}; // id -> {name, ward, n, by_grade:{}, by_enumerator:{}, by_round:{}, days:{}, flags:[]}
+  const dailyTotals = {}; // day -> n, every record with a usable date, regardless of enumerator
+
+  function touchEnumerator(name) {
+    enumeratorDetail[name] ??= { n: 0, schools: {}, days: {}, flags: [] };
+    return enumeratorDetail[name];
+  }
+  function touchSchool(id) {
+    schoolDetail[id] ??= {
+      name: SCHOOLS[id]?.name || `School ${id}`,
+      ward: SCHOOLS[id]?.ward || null,
+      n: 0, by_grade: {}, by_enumerator: {}, by_round: {}, days: {}, flags: [],
+    };
+    return schoolDetail[id];
+  }
 
   for (const r of results) {
     const schoolId = r['grp_id/school_id'];
@@ -71,6 +95,11 @@ export function aggregate(results) {
     const endTime = r['grp_summary/end_time'];
     const onRoster = r['grp_student/on_roster'];
     const formVersion = r['form_version'];
+    // Display-only date, more permissive than the startTime-only date used
+    // for enumerator volume flagging below — falls back to
+    // submission_timestamp so a record missing start_time still shows up
+    // somewhere in the school/ward/overall day breakdowns.
+    const recordDay = (startTime || r['_submission_time'] || '').slice(0, 10) || null;
 
     if (!grade) missingGrade++;
     if (!schoolId) missingSchool++;
@@ -83,6 +112,8 @@ export function aggregate(results) {
         flags.push({
           severity: 'med',
           type: 'round_mismatch',
+          school_id: schoolId || null,
+          enumerator: enumerator || null,
           message: `${r['grp_student/student_code'] || 'unknown'}: marked "${manualType}" in KoBo but the submission date (${(startTime || '').slice(0, 10)}) computes to a different round — worth checking.`,
         });
       }
@@ -119,12 +150,37 @@ export function aggregate(results) {
       }
     }
 
+    // --- DQ school/ward detail: every record with a school_id counts
+    // here, independent of whether its level data was valid — a visit
+    // with messy level data is still a real visit the logistics side
+    // needs to see.
+    if (schoolId) {
+      const sd = touchSchool(schoolId);
+      sd.n++;
+      const g = grade || 'unknown';
+      sd.by_grade[g] = (sd.by_grade[g] || 0) + 1;
+      if (enumerator) sd.by_enumerator[enumerator] = (sd.by_enumerator[enumerator] || 0) + 1;
+      if (computed) sd.by_round[computed.round] = (sd.by_round[computed.round] || 0) + 1;
+      if (recordDay) sd.days[recordDay] = (sd.days[recordDay] || 0) + 1;
+    }
+    if (recordDay) dailyTotals[recordDay] = (dailyTotals[recordDay] || 0) + 1;
+
     if (enumerator && startTime) {
       const day = startTime.slice(0, 10);
       enumeratorDays[enumerator] ??= {};
       enumeratorDays[enumerator][day] = (enumeratorDays[enumerator][day] || 0) + 1;
       enumeratorTimestamps[enumerator] ??= [];
-      enumeratorTimestamps[enumerator].push(startTime);
+      enumeratorTimestamps[enumerator].push({ t: startTime, school_id: schoolId || null });
+
+      // DQ enumerator detail is deliberately gated on the same
+      // (enumerator && startTime) condition as enumeratorDays/
+      // enumeratorTotals above, so the "n" shown in the drill-down always
+      // matches the "n" shown in the plain enumerator table — no silently
+      // different numbers for the same person.
+      const ed = touchEnumerator(enumerator);
+      ed.n++;
+      if (schoolId) ed.schools[schoolId] = (ed.schools[schoolId] || 0) + 1;
+      ed.days[day] = (ed.days[day] || 0) + 1;
     }
 
     if (enumerator && (onRoster === '1' || onRoster === '0')) {
@@ -142,7 +198,7 @@ export function aggregate(results) {
       // enumerator's own mean/stdev baseline below.
       if (Number.isFinite(mins) && mins >= 0 && mins < 60) {
         enumeratorDurations[enumerator] ??= [];
-        enumeratorDurations[enumerator].push({ mins, code: r['grp_student/student_code'] || 'unknown' });
+        enumeratorDurations[enumerator].push({ mins, code: r['grp_student/student_code'] || 'unknown', school_id: schoolId || null });
       }
     }
   }
@@ -167,6 +223,8 @@ export function aggregate(results) {
         flags.push({
           severity: 'high',
           type: 'short_duration',
+          enumerator,
+          school_id: d.school_id,
           message: `${enumerator}: assessment completed in ${d.mins.toFixed(1)} min (student ${d.code}) — ${reason}.`,
         });
       }
@@ -180,18 +238,20 @@ export function aggregate(results) {
 
   // --- Submission bursts: 3+ consecutive submissions each under a minute
   // apart, flagged once per run rather than once per record ---
-  for (const [enumerator, timestamps] of Object.entries(enumeratorTimestamps)) {
-    const sorted = [...timestamps].sort();
+  for (const [enumerator, entries] of Object.entries(enumeratorTimestamps)) {
+    const sorted = [...entries].sort((a, b) => (a.t < b.t ? -1 : a.t > b.t ? 1 : 0));
     let runStart = 0;
     for (let i = 1; i <= sorted.length; i++) {
-      const gapOk = i < sorted.length && (new Date(sorted[i]) - new Date(sorted[i - 1])) / 1000 < BURST_GAP_SECONDS;
+      const gapOk = i < sorted.length && (new Date(sorted[i].t) - new Date(sorted[i - 1].t)) / 1000 < BURST_GAP_SECONDS;
       if (!gapOk) {
         const runLength = i - runStart;
         if (runLength >= BURST_MIN_COUNT) {
           flags.push({
             severity: 'med',
             type: 'submission_burst',
-            message: `${enumerator}: ${runLength} submissions within a minute of each other, starting ${sorted[runStart].slice(0, 16).replace('T', ' ')} — worth checking these weren't batch-entered after the fact.`,
+            enumerator,
+            school_id: sorted[runStart].school_id,
+            message: `${enumerator}: ${runLength} submissions within a minute of each other, starting ${sorted[runStart].t.slice(0, 16).replace('T', ' ')} — worth checking these weren't batch-entered after the fact.`,
           });
         }
         runStart = i;
@@ -220,6 +280,7 @@ export function aggregate(results) {
         flags.push({
           severity: 'high',
           type: 'high_volume',
+          enumerator,
           message: `${enumerator}: ${count} assessments on ${day} — above the ${MAX_PER_DAY}/day reference rate. Worth a supervisor check-in.`,
         });
       }
@@ -232,6 +293,27 @@ export function aggregate(results) {
     flags.push({ severity: 'med', type: 'missing_school', message: `${missingSchool} submission(s) missing a school_id value.` });
   }
 
+  // --- Distribute flags onto their enumerator/school entry so the
+  // drill-down views can show "what's flagged about THIS person/school"
+  // directly, without re-parsing message text client-side. A flag with no
+  // enumerator/school_id (e.g. form_version_drift) stays global-only.
+  for (const f of flags) {
+    if (f.enumerator && enumeratorDetail[f.enumerator]) enumeratorDetail[f.enumerator].flags.push(f);
+    if (f.school_id && schoolDetail[f.school_id]) schoolDetail[f.school_id].flags.push(f);
+  }
+
+  // --- Ward rollup, derived from schoolDetail (SCHOOLS is the only place
+  // a school's ward is known; schools with no ward on record group under
+  // "Unknown" rather than being silently dropped from the ward view) ---
+  const wardDetail = {};
+  for (const [schoolId, s] of Object.entries(schoolDetail)) {
+    const ward = s.ward || 'Unknown';
+    wardDetail[ward] ??= { n: 0, schools: {}, flag_count: 0 };
+    wardDetail[ward].n += s.n;
+    wardDetail[ward].schools[schoolId] = { name: s.name, n: s.n };
+    wardDetail[ward].flag_count += s.flags.length;
+  }
+
   const enumeratorTotals = {};
   for (const [enumerator, days] of Object.entries(enumeratorDays)) {
     enumeratorTotals[enumerator] = Object.values(days).reduce((a, b) => a + b, 0);
@@ -242,6 +324,15 @@ export function aggregate(results) {
   return {
     years,
     by_year: byYear,
-    dq: { flags, enumerator_totals: enumeratorTotals, enumerator_pace: enumeratorPace, round_mismatches: roundMismatches },
+    dq: {
+      flags,
+      enumerator_totals: enumeratorTotals,
+      enumerator_pace: enumeratorPace,
+      enumerator_detail: enumeratorDetail,
+      school_detail: schoolDetail,
+      ward_detail: wardDetail,
+      daily_totals: dailyTotals,
+      round_mismatches: roundMismatches,
+    },
   };
 }

@@ -185,6 +185,21 @@ a{color:var(--teal)}a:hover{color:var(--ink)}
 .tbl td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--ink-dim)}
 .tbl-wrap{overflow-x:auto;border-radius:0 0 8px 8px;margin:0 -16px -16px;padding:0 16px 4px}
 
+/* Data Quality tab: search/filter + drill-down detail shared by the
+   enumerator/school/ward sections. Reuses .school-row/.school-snapshot/
+   .snap-section-label from the Find-Your-School card for visual
+   consistency rather than inventing a parallel set of card styles. */
+.dq-search{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--surface);color:var(--ink);margin-bottom:10px;box-sizing:border-box}
+.dq-search::placeholder{color:var(--ink-faint)}
+.dq-row-flagct{font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:9px;background:var(--flag-high-bg);color:var(--flag-high-ink);flex-shrink:0;white-space:nowrap}
+.dq-timeline{display:flex;align-items:flex-end;gap:3px;overflow-x:auto;height:70px;padding-bottom:2px}
+.dq-tbar{flex-shrink:0;width:9px;border-radius:2px 2px 0 0;background:var(--teal);min-height:2px}
+.dq-spark{display:flex;align-items:flex-end;gap:2px;height:28px;margin:2px 0}
+.dq-spark div{width:5px;border-radius:1px;background:var(--teal);min-height:2px;flex-shrink:0}
+.dq-mini-list{font-size:11px;color:var(--ink-dim);line-height:1.65}
+.dq-mini-row{display:flex;justify-content:space-between;gap:10px}
+.dq-mini-row span:last-child{font-weight:700;color:var(--ink);flex-shrink:0}
+
 .ins-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
 .ins-headline{font-size:15px;font-weight:800;color:var(--ink);line-height:1.4;margin-bottom:4px}
 .ins-sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--ink);margin:16px 0 8px}
@@ -375,13 +390,40 @@ a{color:var(--teal)}a:hover{color:var(--ink)}
 
     <div class="panel" data-panel="dq" hidden>
       <div class="card">
+        <div class="ct" data-t="ct_dq_summary"></div>
+        <div class="kg" id="dq-kpis"></div>
+      </div>
+
+      <div class="card">
+        <div class="ct" data-t="ct_dq_timeline"></div>
+        <div id="dq-timeline"></div>
+      </div>
+
+      <div class="card">
+        <input type="text" class="dq-search" id="dq-search">
+      </div>
+
+      <div class="card">
         <div class="ct" data-t="ct_flags"></div>
+        <div class="gpills" id="dq-sev-pills"></div>
         <div id="dq-flags"></div>
       </div>
+
       <div class="card">
         <div class="ct" data-t="ct_enumerators"></div>
-        <div class="tbl-wrap"><table class="tbl" id="enumerator-tbl"></table></div>
+        <div id="dq-enum-list"></div>
       </div>
+
+      <div class="card">
+        <div class="ct" data-t="ct_dq_schools"></div>
+        <div id="dq-school-list"></div>
+      </div>
+
+      <div class="card">
+        <div class="ct" data-t="ct_dq_wards"></div>
+        <div id="dq-ward-list"></div>
+      </div>
+
       <div class="card">
         <div class="ct" data-t="ct_admin_export"></div>
         <div class="intro-line" style="margin:0 0 12px" data-t="admin_export_desc"></div>
@@ -446,6 +488,16 @@ const T = {
     ct_rounds: 'Ziara za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
     ct_enumerators: 'Mwenendo wa Watahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
     lbl_avg_duration: 'Muda wa Wastani', lbl_off_roster_rate: '% Nje ya Orodha',
+    ct_dq_summary: 'Muhtasari', ct_dq_timeline: 'Uwasilishaji kwa Siku',
+    ct_dq_schools: 'Shule — Kina', ct_dq_wards: 'Kata — Muhtasari',
+    dq_search_ph: 'Tafuta mtahini, shule, au kata…',
+    dq_sev_all: 'Zote', dq_sev_high: 'Kali', dq_sev_med: 'Wastani',
+    kpi_dq_submissions: 'Uwasilishaji Jumla', kpi_dq_enumerators: 'Watahini Hai', kpi_dq_wards: 'Kata',
+    kpi_dq_flags_high: 'Vibendera Kali', kpi_dq_flags_med: 'Vibendera Wastani',
+    lbl_ward: 'Kata', lbl_flags: 'Vibendera', lbl_days_active: 'Siku za Kazi', lbl_schools_visited: 'Shule Alizozitembelea',
+    lbl_by_grade: 'Kwa Darasa', lbl_by_enumerator: 'Kwa Mtahini', lbl_schools_in_ward: 'Shule katika Kata Hii',
+    dq_no_flags_entity: 'Hakuna vibendera kwa huyu/hii.', dq_empty: 'Hakuna takwimu bado.',
+    dq_tests_short: 'tathmini', dq_no_match: 'Hakuna linalofanana na utafutaji wako.',
     ct_admin_export: '🔐 Pakua Majina ya Wanafunzi (Admin)',
     admin_export_desc: 'CSV yenye majina halisi ya watoto na vitambulisho vyao — kwa timu ya ndani tu, kwa ajili ya ripoti za shule. Inahitaji nenosiri tofauti na la Timu.',
     admin_export_btn: 'Pakua CSV', admin_lock_title: 'Ufikiaji wa Admin',
@@ -500,6 +552,16 @@ const T = {
     ct_rounds: 'Assessment Visits', ct_school_grade: 'School × Grade', ct_flags: 'Flags Needing Attention',
     ct_enumerators: 'Enumerator Pace', ct_programme_intel: 'Programme Intelligence', ct_operational_intel: 'Operational Intelligence',
     lbl_avg_duration: 'Avg Duration', lbl_off_roster_rate: '% Off-Roster',
+    ct_dq_summary: 'Summary', ct_dq_timeline: 'Submissions Over Time',
+    ct_dq_schools: 'Schools — Detail', ct_dq_wards: 'Wards — Rollup',
+    dq_search_ph: 'Search enumerator, school, or ward…',
+    dq_sev_all: 'All', dq_sev_high: 'High', dq_sev_med: 'Med',
+    kpi_dq_submissions: 'Total Submissions', kpi_dq_enumerators: 'Active Enumerators', kpi_dq_wards: 'Wards',
+    kpi_dq_flags_high: 'High Flags', kpi_dq_flags_med: 'Med Flags',
+    lbl_ward: 'Ward', lbl_flags: 'Flags', lbl_days_active: 'Days Active', lbl_schools_visited: 'Schools Visited',
+    lbl_by_grade: 'By Grade', lbl_by_enumerator: 'By Enumerator', lbl_schools_in_ward: 'Schools in This Ward',
+    dq_no_flags_entity: 'No flags for this one.', dq_empty: 'No data yet.',
+    dq_tests_short: 'tests', dq_no_match: 'Nothing matches your search.',
     ct_admin_export: '🔐 Download Student Names (Admin)',
     admin_export_desc: 'A CSV with real children’s names and their IDs — internal team only, for building school reports. Needs a separate passphrase from Team.',
     admin_export_btn: 'Download CSV', admin_lock_title: 'Admin Access',
@@ -760,6 +822,7 @@ function applyStaticText() {
   });
   // placeholder text isn't innerHTML, so [data-t] can't set it directly
   document.getElementById('lock-input').placeholder = t('lock_placeholder');
+  document.getElementById('dq-search').placeholder = t('dq_search_ph');
   document.documentElement.lang = LANG;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
 }
@@ -1085,26 +1148,229 @@ function renderProgramme() {
     (rows.join('') || `<tr><td colspan="5" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_no_data_row')}</td></tr>`);
 }
 
-function renderDQ() {
-  const flags = DATA.dq.flags;
-  document.getElementById('dq-flags').innerHTML = flags.length ? flags.map(f => `
-    <div class="flag-item ${f.severity === 'med' ? 'med' : ''}">
-      <span class="flag-sev">${f.severity}</span>
-      <div class="flag-msg">${f.message}</div>
-    </div>`).join('') : `<div class="empty">${t('empty_flags')}</div>`;
+/* ============================== Data Quality tab ==============================
+   Built for the internal team's HR/logistics use, not just flagging —
+   every enumerator/school/ward that appears anywhere in the data gets a
+   row here, click-to-expand for the full detail, with a shared search box
+   and severity filter. All of this reads DATA.dq, which the server
+   already strips to empty shapes for anyone not team-authenticated (see
+   redactSummaryForPublic in src/index.js) — no extra gating needed here. */
+let DQ_FILTER = '';
+let DQ_SEV = 'all';
+let openDqEnum = null, openDqSchool = null, openDqWard = null;
 
-  const pace = DATA.dq.enumerator_pace || {};
-  const rows = Object.entries(DATA.dq.enumerator_totals).sort((a, b) => b[1] - a[1])
-    .map(([name, n]) => {
-      const p = pace[name];
-      const dur = p ? `${p.mean_duration} ${LANG === 'sw' ? 'dak' : 'min'}` : '—';
-      const offRoster = p && p.off_roster_rate != null ? `${p.off_roster_rate}%` : '—';
-      return `<tr><td>${name}</td><td style="text-align:right">${n}</td><td style="text-align:right">${dur}</td><td style="text-align:right">${offRoster}</td></tr>`;
-    }).join('');
-  document.getElementById('enumerator-tbl').innerHTML =
-    `<tr><th>${t('lbl_enumerator')}</th><th style="text-align:right">n</th><th style="text-align:right">${t('lbl_avg_duration')}</th><th style="text-align:right">${t('lbl_off_roster_rate')}</th></tr>` +
-    (rows || `<tr><td colspan="4" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_enum')}</td></tr>`);
+function dqMatches(...fields) {
+  if (!DQ_FILTER) return true;
+  const needle = DQ_FILTER.toLowerCase();
+  return fields.some(f => f != null && String(f).toLowerCase().includes(needle));
 }
+
+function flagItemHtml(f) {
+  return `<div class="flag-item ${f.severity === 'med' ? 'med' : ''}">
+    <span class="flag-sev">${f.severity}</span>
+    <div class="flag-msg">${f.message}</div>
+  </div>`;
+}
+
+// A tiny hand-rolled bar sparkline (no charting library) — consistent
+// with how renderTrends() already draws bars as plain styled divs rather
+// than pulling in a chart dependency.
+function miniSpark(days) {
+  const entries = Object.entries(days || {}).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  if (!entries.length) return '';
+  const max = Math.max(...entries.map(([, v]) => v), 1);
+  return `<div class="dq-spark">${entries.map(([day, v]) =>
+    `<div style="height:${Math.max(3, Math.round((v / max) * 28))}px" title="${day}: ${v}"></div>`).join('')}</div>`;
+}
+
+function renderDQSummary() {
+  const dq = DATA.dq;
+  const nEnum = Object.keys(dq.enumerator_detail || {}).length;
+  const nSchool = Object.keys(dq.school_detail || {}).length;
+  const nWard = Object.keys(dq.ward_detail || {}).length;
+  const totalN = Object.values(dq.enumerator_totals || {}).reduce((a, b) => a + b, 0);
+  const high = dq.flags.filter(f => f.severity === 'high').length;
+  const med = dq.flags.filter(f => f.severity !== 'high').length;
+  document.getElementById('dq-kpis').innerHTML = `
+    <div class="kc"><div class="kl">${t('kpi_dq_submissions')}</div><div class="kv">${totalN}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_dq_enumerators')}</div><div class="kv">${nEnum}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_schools')}</div><div class="kv">${nSchool}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_dq_wards')}</div><div class="kv">${nWard}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_dq_flags_high')}</div><div class="kv" style="color:var(--terracotta)">${high}</div></div>
+    <div class="kc"><div class="kl">${t('kpi_dq_flags_med')}</div><div class="kv" style="color:var(--gold)">${med}</div></div>
+  `;
+}
+
+function renderDQTimeline() {
+  const days = Object.entries(DATA.dq.daily_totals || {}).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  const el = document.getElementById('dq-timeline');
+  if (!days.length) { el.innerHTML = `<div class="empty">${t('dq_empty')}</div>`; return; }
+  const max = Math.max(...days.map(([, v]) => v), 1);
+  el.innerHTML = days.map(([day, v]) =>
+    `<div class="dq-tbar" style="height:${Math.max(3, Math.round((v / max) * 64))}px" title="${day}: ${v}"></div>`).join('');
+}
+
+function renderDQSevPills() {
+  const sevs = [['all', t('dq_sev_all')], ['high', t('dq_sev_high')], ['med', t('dq_sev_med')]];
+  document.getElementById('dq-sev-pills').innerHTML = sevs.map(([k, label]) =>
+    `<button class="gpill ${DQ_SEV === k ? 'on' : ''}" data-sev="${k}">${label}</button>`).join('');
+  document.querySelectorAll('#dq-sev-pills .gpill').forEach(btn => {
+    btn.onclick = () => { DQ_SEV = btn.dataset.sev; renderDQFlags(); renderDQSevPills(); };
+  });
+}
+
+function renderDQFlags() {
+  let flags = DATA.dq.flags;
+  if (DQ_SEV !== 'all') flags = flags.filter(f => (DQ_SEV === 'high' ? f.severity === 'high' : f.severity !== 'high'));
+  if (DQ_FILTER) flags = flags.filter(f => dqMatches(f.message, f.enumerator, f.school_id));
+  document.getElementById('dq-flags').innerHTML = flags.length ? flags.map(flagItemHtml).join('')
+    : `<div class="empty">${DQ_FILTER ? t('dq_no_match') : t('empty_flags')}</div>`;
+}
+
+function renderDQEnumerators() {
+  const pace = DATA.dq.enumerator_pace || {};
+  const detail = DATA.dq.enumerator_detail || {};
+  const schoolDetail = DATA.dq.school_detail || {};
+  const rows = Object.entries(DATA.dq.enumerator_totals)
+    .filter(([name]) => dqMatches(name))
+    .sort((a, b) => b[1] - a[1]);
+  document.getElementById('dq-enum-list').innerHTML = rows.length ? rows.map(([name, n]) => {
+    const p = pace[name] || {};
+    const d = detail[name] || { schools: {}, days: {}, flags: [] };
+    const nSchools = Object.keys(d.schools).length;
+    const nFlags = d.flags.length;
+    const dur = p.mean_duration != null ? `${p.mean_duration} ${LANG === 'sw' ? 'dak' : 'min'}` : '—';
+    const offRoster = p.off_roster_rate != null ? `${p.off_roster_rate}%` : '—';
+    let detailHtml = '';
+    if (openDqEnum === name) {
+      const schoolList = Object.entries(d.schools).sort((a, b) => b[1] - a[1])
+        .map(([sid, c]) => `<div class="dq-mini-row"><span>${(schoolDetail[sid] || {}).name || sid}</span><span>${c}</span></div>`).join('');
+      detailHtml = `<div class="school-snapshot">
+        <div class="dq-mini-row"><span>${t('lbl_avg_duration')}</span><span>${dur}</span></div>
+        <div class="dq-mini-row"><span>${t('lbl_off_roster_rate')}</span><span>${offRoster}</span></div>
+        <div class="snap-section-label">${t('lbl_schools_visited')} (${nSchools})</div>
+        <div class="dq-mini-list">${schoolList || `<div class="empty">${t('dq_empty')}</div>`}</div>
+        <div class="snap-section-label">${t('lbl_days_active')} (${Object.keys(d.days).length})</div>
+        ${miniSpark(d.days) || `<div class="empty">${t('dq_empty')}</div>`}
+        <div class="snap-section-label">${t('lbl_flags')} (${nFlags})</div>
+        ${nFlags ? d.flags.map(flagItemHtml).join('') : `<div class="empty">${t('dq_no_flags_entity')}</div>`}
+      </div>`;
+    }
+    return `<div class="school-row-wrap">
+      <div class="school-row dq-click-row" data-kind="enum" data-key="${name}">
+        <div class="school-name">${name}<div class="school-ward">${nSchools} ${t('lbl_schools_visited').toLowerCase()} · ${n} ${t('dq_tests_short')}</div></div>
+        ${nFlags ? `<span class="dq-row-flagct">${nFlags} ⚠</span>` : ''}
+      </div>
+      ${detailHtml}
+    </div>`;
+  }).join('') : `<div class="empty">${DQ_FILTER ? t('dq_no_match') : t('empty_enum')}</div>`;
+}
+
+function renderDQSchools() {
+  const schoolDetail = DATA.dq.school_detail || {};
+  const rows = Object.entries(schoolDetail)
+    .filter(([, s]) => dqMatches(s.name, s.ward))
+    .sort((a, b) => b[1].n - a[1].n);
+  document.getElementById('dq-school-list').innerHTML = rows.length ? rows.map(([id, s]) => {
+    const nFlags = s.flags.length;
+    const nEnum = Object.keys(s.by_enumerator).length;
+    let detailHtml = '';
+    if (openDqSchool === id) {
+      const gradeList = Object.entries(s.by_grade).sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([g, c]) => `<div class="dq-mini-row"><span>${t('lbl_grade')} ${g}</span><span>${c}</span></div>`).join('');
+      const enumList = Object.entries(s.by_enumerator).sort((a, b) => b[1] - a[1])
+        .map(([en, c]) => `<div class="dq-mini-row"><span>${en}</span><span>${c}</span></div>`).join('');
+      detailHtml = `<div class="school-snapshot">
+        <div class="snap-section-label">${t('lbl_by_grade')}</div>
+        <div class="dq-mini-list">${gradeList || `<div class="empty">${t('dq_empty')}</div>`}</div>
+        <div class="snap-section-label">${t('lbl_by_enumerator')} (${nEnum})</div>
+        <div class="dq-mini-list">${enumList || `<div class="empty">${t('dq_empty')}</div>`}</div>
+        <div class="snap-section-label">${t('lbl_days_active')} (${Object.keys(s.days).length})</div>
+        ${miniSpark(s.days) || `<div class="empty">${t('dq_empty')}</div>`}
+        <div class="snap-section-label">${t('lbl_flags')} (${nFlags})</div>
+        ${nFlags ? s.flags.map(flagItemHtml).join('') : `<div class="empty">${t('dq_no_flags_entity')}</div>`}
+      </div>`;
+    }
+    return `<div class="school-row-wrap">
+      <div class="school-row dq-click-row" data-kind="school" data-key="${id}">
+        <div class="school-name">${s.name}<div class="school-ward">${s.ward || ''} · ${nEnum} ${t('lbl_enumerator').toLowerCase()} · ${s.n} ${t('dq_tests_short')}</div></div>
+        ${nFlags ? `<span class="dq-row-flagct">${nFlags} ⚠</span>` : ''}
+      </div>
+      ${detailHtml}
+    </div>`;
+  }).join('') : `<div class="empty">${DQ_FILTER ? t('dq_no_match') : t('dq_empty')}</div>`;
+}
+
+function renderDQWards() {
+  const wardDetail = DATA.dq.ward_detail || {};
+  const rows = Object.entries(wardDetail)
+    .filter(([ward]) => dqMatches(ward))
+    .sort((a, b) => b[1].n - a[1].n);
+  document.getElementById('dq-ward-list').innerHTML = rows.length ? rows.map(([ward, w]) => {
+    const nSchools = Object.keys(w.schools).length;
+    let detailHtml = '';
+    if (openDqWard === ward) {
+      const schoolList = Object.entries(w.schools).sort((a, b) => b[1].n - a[1].n)
+        .map(([, s]) => `<div class="dq-mini-row"><span>${s.name}</span><span>${s.n}</span></div>`).join('');
+      detailHtml = `<div class="school-snapshot">
+        <div class="snap-section-label">${t('lbl_schools_in_ward')} (${nSchools})</div>
+        <div class="dq-mini-list">${schoolList || `<div class="empty">${t('dq_empty')}</div>`}</div>
+        <div class="snap-section-label">${t('lbl_flags')} (${w.flag_count})</div>
+        ${w.flag_count ? '' : `<div class="empty">${t('dq_no_flags_entity')}</div>`}
+      </div>`;
+    }
+    return `<div class="school-row-wrap">
+      <div class="school-row dq-click-row" data-kind="ward" data-key="${ward}">
+        <div class="school-name">${ward}<div class="school-ward">${nSchools} ${LANG === 'sw' ? 'shule' : 'schools'} · ${w.n} ${t('dq_tests_short')}</div></div>
+        ${w.flag_count ? `<span class="dq-row-flagct">${w.flag_count} ⚠</span>` : ''}
+      </div>
+      ${detailHtml}
+    </div>`;
+  }).join('') : `<div class="empty">${DQ_FILTER ? t('dq_no_match') : t('dq_empty')}</div>`;
+}
+
+function renderDQ() {
+  renderDQSummary();
+  renderDQTimeline();
+  renderDQSevPills();
+  renderDQFlags();
+  renderDQEnumerators();
+  renderDQSchools();
+  renderDQWards();
+}
+
+document.getElementById('dq-search').addEventListener('input', (e) => {
+  DQ_FILTER = e.target.value;
+  renderDQEnumerators();
+  renderDQSchools();
+  renderDQWards();
+});
+
+// Delegated clicks for all three drill-down sections — one listener per
+// container rather than inline onclick handlers, so enumerator/school
+// names never need to be escaped into a JS string literal (they already
+// go into HTML unescaped elsewhere in this file, same as school names on
+// the public Find-Your-School card, but a data-attribute read back via
+// .dataset avoids adding a second, string-literal-injection-shaped risk
+// on top of that for this new interactive section specifically).
+document.getElementById('dq-enum-list').addEventListener('click', (e) => {
+  const row = e.target.closest('.dq-click-row');
+  if (!row) return;
+  openDqEnum = openDqEnum === row.dataset.key ? null : row.dataset.key;
+  renderDQEnumerators();
+});
+document.getElementById('dq-school-list').addEventListener('click', (e) => {
+  const row = e.target.closest('.dq-click-row');
+  if (!row) return;
+  openDqSchool = openDqSchool === row.dataset.key ? null : row.dataset.key;
+  renderDQSchools();
+});
+document.getElementById('dq-ward-list').addEventListener('click', (e) => {
+  const row = e.target.closest('.dq-click-row');
+  if (!row) return;
+  openDqWard = openDqWard === row.dataset.key ? null : row.dataset.key;
+  renderDQWards();
+});
 
 function blockSpeakText(block, isPublic) {
   if (!block) return '';

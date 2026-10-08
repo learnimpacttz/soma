@@ -21,7 +21,14 @@ function isTeamAuthed(request, env) {
 // count, safe to leave in either way.
 function redactSummaryForPublic(summary) {
   if (!summary || !summary.dq) return summary;
-  return { ...summary, dq: { flags: [], enumerator_totals: {}, enumerator_pace: {}, round_mismatches: summary.dq.round_mismatches } };
+  return {
+    ...summary,
+    dq: {
+      flags: [], enumerator_totals: {}, enumerator_pace: {},
+      enumerator_detail: {}, school_detail: {}, ward_detail: {}, daily_totals: {},
+      round_mismatches: summary.dq.round_mismatches,
+    },
+  };
 }
 
 // programme_intelligence/operational_intelligence are the internal-only
@@ -95,7 +102,11 @@ export default {
         total_records: 0,
         years: [],
         by_year: {},
-        dq: { flags: [], enumerator_totals: {}, enumerator_pace: {}, round_mismatches: 0 },
+        dq: {
+          flags: [], enumerator_totals: {}, enumerator_pace: {},
+          enumerator_detail: {}, school_detail: {}, ward_detail: {}, daily_totals: {},
+          round_mismatches: 0,
+        },
       };
       // team_authenticated lets the dashboard's unlock prompt confirm
       // whether the secret it just sent was actually accepted, without
