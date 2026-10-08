@@ -4,6 +4,35 @@ import { generateInsights, INSIGHTS_SCHEMA_VERSION } from './insights.js';
 import { resolveChildIdentities, childrenRegistryToCsv } from './children.js';
 import { buildSnapshot } from './snapshot.js';
 
+// Real server-side team auth, replacing the old client-side-only
+// TEAM_PASSPHRASE (which protected nothing — the "hidden" data was
+// already sitting in every visitor's browser regardless of whether the
+// UI showed it). Michael sets TEAM_SECRET himself via
+// `wrangler secret put TEAM_SECRET`; the dashboard's team-unlock prompt
+// now sends whatever was typed as this header and checks whether the
+// server actually accepted it.
+function isTeamAuthed(request, env) {
+  return !!env.TEAM_SECRET && request.headers.get('X-Team-Secret') === env.TEAM_SECRET;
+}
+
+// Enumerator identity is the sensitive part of a summary — DQ flag
+// messages name them by name, and both enumerator_totals AND
+// enumerator_pace are keyed by name too. round_mismatches is just a
+// count, safe to leave in either way.
+function redactSummaryForPublic(summary) {
+  if (!summary || !summary.dq) return summary;
+  return { ...summary, dq: { flags: [], enumerator_totals: {}, enumerator_pace: {}, round_mismatches: summary.dq.round_mismatches } };
+}
+
+// programme_intelligence/operational_intelligence are the internal-only
+// sections — operational_intelligence explicitly names enumerators by
+// design (see src/insights.js's system prompt). public stays either way.
+function redactInsightsForPublic(stored) {
+  if (!stored || !stored.public) return stored;
+  const { programme_intelligence, operational_intelligence, ...rest } = stored;
+  return rest;
+}
+
 // Shared by the cron trigger and the on-demand /api/refresh route, so both
 // paths do exactly the same fetch-and-store — no duplicated logic to drift.
 async function refreshData(env) {
@@ -53,6 +82,7 @@ async function refreshData(env) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const authed = isTeamAuthed(request, env);
 
     // /api/data (raw KoBo records: child names, GPS, enumerators) used to be
     // served publicly here. Nothing in the dashboard needs it, so it is gone;
@@ -60,21 +90,23 @@ export default {
 
     if (url.pathname === '/api/summary') {
       const stored = await env.DASHBOARD_KV.get('summary', 'json');
-      return Response.json(
-        stored || {
-          status: env.KOBO_ASSET_ID ? 'pending_first_fetch' : 'not_configured',
-          total_records: 0,
-          years: [],
-          by_year: {},
-          dq: { flags: [], enumerator_totals: {}, round_mismatches: 0 },
-        }
-      );
+      const body = stored || {
+        status: env.KOBO_ASSET_ID ? 'pending_first_fetch' : 'not_configured',
+        total_records: 0,
+        years: [],
+        by_year: {},
+        dq: { flags: [], enumerator_totals: {}, enumerator_pace: {}, round_mismatches: 0 },
+      };
+      // team_authenticated lets the dashboard's unlock prompt confirm
+      // whether the secret it just sent was actually accepted, without
+      // having to infer it from which fields are present.
+      return Response.json({ ...(authed ? body : redactSummaryForPublic(body)), team_authenticated: authed });
     }
 
-    // On-demand refresh — same logic the 30-min cron runs, triggerable
-    // manually (testing, or a "refresh now" button in the dashboard later).
-    // Doesn't touch KOBO_TOKEN client-side; the fetch stays server-side.
+    // On-demand refresh — same logic the 30-min cron runs. Gated: it's
+    // free to call but can hammer KoBo's API if left open to anyone.
     if (url.pathname === '/api/refresh' && request.method === 'POST') {
+      if (!authed) return Response.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
       const result = await refreshData(env);
       // Never echo the raw records back — they contain child names and GPS.
       const safe = result.ok
@@ -83,44 +115,10 @@ export default {
       return Response.json(safe, { status: result.ok ? 200 : 502 });
     }
 
-    // TEMPORARY — demo-data seeding for reviewing the dashboard with more
-    // volume than the real KoBo form has yet. Never touches KoBo itself;
-    // merges synthetic records into KV on top of whatever's really there.
-    // Calling /api/refresh afterward re-pulls from KoBo and overwrites this,
-    // so seeding is always cleanly reversible. Remove this route entirely
-    // before real field rollout.
-    if (url.pathname === '/api/seed-demo' && request.method === 'POST') {
-      if (!env.SEED_KEY || request.headers.get('X-Seed-Key') !== env.SEED_KEY) {
-        return Response.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
-      }
-      const body = await request.json();
-      const dummy = Array.isArray(body.records) ? body.records : [];
-      const existing = (await env.DASHBOARD_KV.get('data', 'json'))?.results || [];
-      const real = existing.filter((r) => !r._demo);
-      const combined = [...real, ...dummy];
-      const payload = {
-        status: 'ok',
-        total_records: combined.length,
-        fetched_at: new Date().toISOString(),
-        results: combined,
-      };
-      const summary = {
-        status: 'ok',
-        total_records: combined.length,
-        fetched_at: payload.fetched_at,
-        ...aggregate(combined),
-      };
-      await env.DASHBOARD_KV.put('data', JSON.stringify(payload));
-      await env.DASHBOARD_KV.put('summary', JSON.stringify(summary));
-      return Response.json({ ok: true, total_records: combined.length, demo_records: dummy.length });
-    }
-
     // Internal-only export: the one place a child's real name is ever
-    // returned. Gated by a real server-side secret (ADMIN_KEY) — the
-    // dashboard's TEAM_PASSPHRASE is cosmetic client-side UI gating, not
-    // real auth, so it can't protect this. Michael sets ADMIN_KEY himself
-    // via `wrangler secret put ADMIN_KEY`; this route 404s until it's set,
-    // same pattern as the other not-yet-rotated secrets on this Worker.
+    // returned. Gated by its own secret (ADMIN_KEY, separate from and
+    // higher-privilege than TEAM_SECRET) — set via
+    // `wrangler secret put ADMIN_KEY`.
     if (url.pathname === '/api/admin/children-export') {
       if (!env.ADMIN_KEY || request.headers.get('X-Admin-Key') !== env.ADMIN_KEY) {
         return Response.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
@@ -145,15 +143,16 @@ export default {
 
     if (url.pathname === '/api/insights') {
       const stored = await env.DASHBOARD_KV.get('insights', 'json');
-      return Response.json(stored || { status: 'not_generated' });
+      const body = stored || { status: 'not_generated' };
+      return Response.json(authed ? body : redactInsightsForPublic(body));
     }
 
     // On-demand — regenerating on every 30-min cron tick would mean 48
     // LLM calls/day regardless of whether the underlying data changed.
-    // Kept manual for now (or call it after a real /api/refresh); an
-    // automatic slower-cadence trigger is a reasonable follow-up, not
-    // built unrequested.
+    // Kept manual for now (or call it after a real /api/refresh); costs
+    // real Anthropic credit per call, so it's gated like /api/refresh.
     if (url.pathname === '/api/generate-insights' && request.method === 'POST') {
+      if (!authed) return Response.json({ ok: false, reason: 'unauthorized' }, { status: 401 });
       if (!env.ANTHROPIC_API_KEY) {
         return Response.json({ ok: false, reason: 'ANTHROPIC_API_KEY not set' }, { status: 501 });
       }

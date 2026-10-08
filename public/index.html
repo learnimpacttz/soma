@@ -392,7 +392,8 @@ const T = {
     ct_trend_arith: 'Hesabu — Amefikia Kiwango+',
     ct_compare: 'Ulinganisho wa Shule', ct_rising: 'Ongezeko Kubwa la Ujifunzaji', ct_rising_sub_prefix: 'ongezeko kubwa,',
     ct_rounds: 'Ziara za Tathmini', ct_school_grade: 'Shule × Darasa', ct_flags: 'Vibendera vya Kuangalia',
-    ct_enumerators: 'Uwasilishaji kwa Mtahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
+    ct_enumerators: 'Mwenendo wa Watahini', ct_programme_intel: 'Maarifa ya Programu', ct_operational_intel: 'Maarifa ya Uendeshaji',
+    lbl_avg_duration: 'Muda wa Wastani', lbl_off_roster_rate: '% Nje ya Orodha',
     kpi_students: 'Watoto Waliopimwa', kpi_schools: 'Shule Zinazoripoti', kpi_reading: 'Usomaji — Waliofikia Kiwango',
     kpi_arith: 'Hesabu — Waliofikia Kiwango', of_schools: 'kati ya shule 10',
     lbl_grade: 'Darasa',
@@ -440,7 +441,8 @@ const T = {
     ct_trend_arith: 'Arithmetic — On Track+',
     ct_compare: 'How Schools Compare', ct_rising: 'Rising Fast', ct_rising_sub_prefix: 'biggest gains,',
     ct_rounds: 'Assessment Visits', ct_school_grade: 'School × Grade', ct_flags: 'Flags Needing Attention',
-    ct_enumerators: 'Submissions by Enumerator', ct_programme_intel: 'Programme Intelligence', ct_operational_intel: 'Operational Intelligence',
+    ct_enumerators: 'Enumerator Pace', ct_programme_intel: 'Programme Intelligence', ct_operational_intel: 'Operational Intelligence',
+    lbl_avg_duration: 'Avg Duration', lbl_off_roster_rate: '% Off-Roster',
     kpi_students: 'Students Assessed', kpi_schools: 'Schools Reporting', kpi_reading: 'Reading — On Track',
     kpi_arith: 'Arithmetic — On Track', of_schools: 'of 10 schools',
     lbl_grade: 'Grade',
@@ -594,10 +596,8 @@ const GUIDANCE = {
   ],
 };
 
-// Not real security — a light gate matching the stakeholders-survey
-// pattern, meant to keep casual visitors out of internal views, not to
-// withstand a determined attacker. Change before wider rollout.
-const TEAM_PASSPHRASE = 'soma-kibaha-2026';
+// The real team secret is never present in this file — see the "Team
+// access gate" section below, which checks it against the server.
 
 // Must match src/insights.js's INSIGHTS_SCHEMA_VERSION exactly.
 const INSIGHTS_SCHEMA_VERSION = 6;
@@ -1010,11 +1010,17 @@ function renderDQ() {
       <div class="flag-msg">${f.message}</div>
     </div>`).join('') : `<div class="empty">${t('empty_flags')}</div>`;
 
+  const pace = DATA.dq.enumerator_pace || {};
   const rows = Object.entries(DATA.dq.enumerator_totals).sort((a, b) => b[1] - a[1])
-    .map(([name, n]) => `<tr><td>${name}</td><td>${n}</td></tr>`).join('');
+    .map(([name, n]) => {
+      const p = pace[name];
+      const dur = p ? `${p.mean_duration} ${LANG === 'sw' ? 'dak' : 'min'}` : '—';
+      const offRoster = p && p.off_roster_rate != null ? `${p.off_roster_rate}%` : '—';
+      return `<tr><td>${name}</td><td style="text-align:right">${n}</td><td style="text-align:right">${dur}</td><td style="text-align:right">${offRoster}</td></tr>`;
+    }).join('');
   document.getElementById('enumerator-tbl').innerHTML =
-    `<tr><th>${t('lbl_enumerator')}</th><th>n</th></tr>` +
-    (rows || `<tr><td colspan="2" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_enum')}</td></tr>`);
+    `<tr><th>${t('lbl_enumerator')}</th><th style="text-align:right">n</th><th style="text-align:right">${t('lbl_avg_duration')}</th><th style="text-align:right">${t('lbl_off_roster_rate')}</th></tr>` +
+    (rows || `<tr><td colspan="4" style="text-align:center;color:#9aa4b8;padding:14px">${t('empty_enum')}</td></tr>`);
 }
 
 function blockSpeakText(block, isPublic) {
@@ -1094,10 +1100,13 @@ function renderInsights() {
 }
 
 async function triggerInsights() {
+  // Costs real Anthropic credit per call, so it needs the team secret —
+  // prompt for it rather than letting the request fail silently.
+  if (!isTeamUnlocked()) { openLock(); return; }
   const btn = document.getElementById('gen-insights-btn');
   if (btn) { btn.disabled = true; btn.textContent = t('insights_generating'); }
   try {
-    const res = await fetch('/api/generate-insights', { method: 'POST' });
+    const res = await fetch('/api/generate-insights', { method: 'POST', headers: teamHeaders() });
     const data = await res.json();
     if (data.ok) { INSIGHTS = data.insights; INSIGHTS_STALE = false; }
   } catch (e) {}
@@ -1146,24 +1155,44 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
   });
 });
 
-/* ============================== Team access gate ============================== */
-const TEAM_KEY = 'soma_team_unlocked';
-function isTeamUnlocked() { return sessionStorage.getItem(TEAM_KEY) === '1'; }
+/* ============================== Team access gate ==============================
+   Real server-side auth now (src/index.js checks X-Team-Secret against the
+   TEAM_SECRET wrangler secret) — this used to be a hardcoded client-side
+   TEAM_PASSPHRASE, which protected nothing, since the "hidden" data was
+   already sitting in every visitor's browser regardless of whether the UI
+   showed it. The client no longer knows the correct secret at all; it just
+   tries whatever was typed and asks the server whether that was right. */
+const TEAM_SESSION_KEY = 'soma_team_secret';
+function isTeamUnlocked() { return !!sessionStorage.getItem(TEAM_SESSION_KEY); }
+function teamHeaders() {
+  const s = sessionStorage.getItem(TEAM_SESSION_KEY);
+  return s ? { 'X-Team-Secret': s } : {};
+}
 function setTeamUnlocked(v) {
-  if (v) sessionStorage.setItem(TEAM_KEY, '1'); else sessionStorage.removeItem(TEAM_KEY);
+  if (!v) sessionStorage.removeItem(TEAM_SESSION_KEY);
   document.getElementById('team-badge-side') && (document.getElementById('team-badge-side').textContent = v ? '🔓 Team' : '🔒 Team');
   buildNav();
   const currentTabDef = TAB_DEFS.find(d => d.key === currentTab);
   if (!v && currentTabDef && currentTabDef.team) switchTab('overview');
 }
-function tryUnlock(pass) {
-  if (pass === TEAM_PASSPHRASE) {
-    setTeamUnlocked(true);
-    document.getElementById('lock-overlay').hidden = true;
-    document.getElementById('lock-err').textContent = '';
-    return true;
-  }
+async function tryUnlock(pass) {
+  if (!pass) return false;
+  const btn = document.getElementById('lock-submit');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetchTimeout('/api/summary', { headers: { 'X-Team-Secret': pass } });
+    const data = await res.json();
+    if (data.team_authenticated) {
+      sessionStorage.setItem(TEAM_SESSION_KEY, pass);
+      setTeamUnlocked(true);
+      document.getElementById('lock-overlay').hidden = true;
+      document.getElementById('lock-err').textContent = '';
+      load(); // re-fetch with the now-stored secret so DQ/internal data populates
+      return true;
+    }
+  } catch (e) {}
   document.getElementById('lock-err').textContent = LANG === 'sw' ? 'Nenosiri si sahihi.' : 'Incorrect passphrase.';
+  if (btn) btn.disabled = false;
   return false;
 }
 function openLock() {
@@ -1207,10 +1236,10 @@ function timeAgo(iso) {
 // spinner running forever with no way out. fetchTimeout() aborts and
 // throws after LOAD_TIMEOUT_MS so load() always reaches its catch block.
 const LOAD_TIMEOUT_MS = 12000;
-function fetchTimeout(url) {
+function fetchTimeout(url, opts) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LOAD_TIMEOUT_MS);
-  return fetch(url, { signal: controller.signal }).finally(() => clearTimeout(timer));
+  return fetch(url, { ...(opts || {}), signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 function showLoadError() {
   const el = document.getElementById('page-loading');
@@ -1238,7 +1267,7 @@ function normalizeSummary(d) {
 async function load() {
   applyStaticText();
   try {
-    const res = await fetchTimeout('/api/summary');
+    const res = await fetchTimeout('/api/summary', { headers: teamHeaders() });
     const fromCache = res.headers.get('X-Soma-Cache') === 'hit';
     DATA = normalizeSummary(await res.json());
     document.getElementById('page-loading').hidden = true;
@@ -1265,7 +1294,7 @@ async function load() {
     return;
   }
   try {
-    const res2 = await fetchTimeout('/api/insights');
+    const res2 = await fetchTimeout('/api/insights', { headers: teamHeaders() });
     const ins = await res2.json();
     // Cached insights from an older schema version (e.g. pre-bilingual, or
     // missing fields a newer prompt introduced) get discarded rather than
