@@ -68,6 +68,29 @@ td{padding:6px 8px;border-bottom:1px solid #eef1f6}
 .grp-action{font-size:10px;color:#4a5468;margin-bottom:7px;line-height:1.4}
 .page-break{break-before:page;page-break-before:always}
 @media (max-width:600px){ .subject-grid{grid-template-columns:1fr} }
+
+/* ---- Plain-language first page (2026-10-24): what we did / strengths /
+   issues / how SOMA is fixing them — added above the stats table because
+   a bare table doesn't push anyone to act. Deterministic, built from the
+   same real numbers as the table below it, never invented. ---- */
+.narrative{background:#F4F4F4;border-radius:10px;padding:16px 18px;margin-bottom:18px}
+.narrative-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#354062;margin-bottom:10px}
+.narrative p{font-size:11.5px;color:#354062;line-height:1.6;margin-bottom:9px}
+.narrative p:last-child{margin-bottom:0}
+.narrative b{color:#354062}
+.narrative .cta-line{background:#fff;border-left:4px solid #FFC650;border-radius:0 6px 6px 0;padding:9px 12px;font-weight:700}
+
+/* ---- Progress Report (2026-10-24): movement since the last visit +
+   recognition leaderboards — split out of the Teacher Action Card
+   (removed from it on 2026-10-08 to keep that one short) into its own
+   report, for whoever's job is tracking change, not daily teaching. ---- */
+.empty-note{font-size:10.5px;color:#9aa4b8;font-style:italic;padding:4px 0}
+.rec-block{margin-bottom:14px}
+.rec-label{font-size:10.5px;font-weight:800;color:#354062;margin-bottom:5px}
+.rec-list{margin:0;padding:0;list-style:none;font-size:10.5px;color:#4a5468}
+.rec-list li{padding:5px 0;border-bottom:1px solid #eef1f6;display:flex;justify-content:space-between;gap:10px}
+.rec-list li:last-child{border-bottom:none}
+.rec-val{font-weight:800;color:#354062;flex-shrink:0}
 .loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 10px;gap:16px}
 .spinner{width:36px;height:36px;border:4px solid #eef1f6;border-top-color:#5EA6B8;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -141,7 +164,7 @@ const ROUND_META = {
 };
 const qs = new URLSearchParams(location.search);
 const LANG = qs.get('lang') === 'en' ? 'en' : 'sw';
-const TYPE = ['school', 'batch'].includes(qs.get('type')) ? qs.get('type') : 'district';
+const TYPE = ['school', 'batch', 'progress'].includes(qs.get('type')) ? qs.get('type') : 'district';
 const SCHOOL_ID = qs.get('id');
 const YEAR_PARAM = qs.get('year');
 // Batch mode: scope=district (every school) or scope=ward&ward=<name> —
@@ -190,6 +213,14 @@ const STR = LANG === 'en' ? {
   ht_summary: 'For the Headteacher — School Summary', on_track: 'On Track',
   largest_group: (n, total, name) => `Largest group: <b>${name}</b> (${n} of ${total} students).`,
   batch_label: (ward) => ward ? `Ward: ${ward}` : 'Whole District',
+  nar_what_we_did: 'What we did', nar_strengths: 'Strengths', nar_issues: 'Issues',
+  nar_how_fixing: "How we're fixing it — SOMA's method",
+  title_progress: 'Progress Report',
+  moved_up: 'moved up a level', stayed: 'stayed at the same level', moved_down: 'moved down a level',
+  changed_pending: 'Not enough visits yet to show change for this grade — this will appear after the next visit.',
+  ct_recognition: 'Recognition', rec_pending: 'Will appear after the next visit.',
+  rec_participation: 'Full Participation (fewest off-roster)', rec_no_one_left: 'No One Left Behind',
+  rec_fastest_growth: 'Fastest Growth', rec_consistent: 'Consistent Excellence',
 } : {
   title_school: 'Ripoti ya Shule', title_district: 'Ripoti ya Wilaya',
   generated: 'Imetengenezwa', round: 'Ziara', students: 'Watoto Waliopimwa',
@@ -208,6 +239,14 @@ const STR = LANG === 'en' ? {
   ht_summary: 'Kwa Mwalimu Mkuu — Muhtasari wa Shule', on_track: 'Waliofikia Kiwango',
   largest_group: (n, total, name) => `Kundi kubwa zaidi: <b>${name}</b> (wanafunzi ${n} kati ya ${total}).`,
   batch_label: (ward) => ward ? `Kata: ${ward}` : 'Wilaya Nzima',
+  nar_what_we_did: 'Tulichofanya', nar_strengths: 'Mafanikio', nar_issues: 'Changamoto',
+  nar_how_fixing: 'Jinsi Tunavyoshughulikia — Mbinu ya SOMA',
+  title_progress: 'Ripoti ya Maendeleo',
+  moved_up: 'wamepanda kiwango', stayed: 'wamebaki kiwango hicho hicho', moved_down: 'wameshuka kiwango',
+  changed_pending: 'Hazijafikia ziara mbili bado kuonyesha mabadiliko kwa darasa hili — hii itaonekana baada ya ziara inayofuata.',
+  ct_recognition: 'Utambuzi', rec_pending: 'Itaonekana baada ya ziara inayofuata.',
+  rec_participation: 'Ushiriki Kamili (nje ya orodha pungufu zaidi)', rec_no_one_left: 'Hakuna Aliyeachwa Nyuma',
+  rec_fastest_growth: 'Ongezeko Kubwa Zaidi', rec_consistent: 'Ubora wa Kudumu',
 };
 
 function pct(c, n) { return n > 0 ? Math.round((c / n) * 100) : 0; }
@@ -346,6 +385,129 @@ function unlockStripHtml(onclickFn) {
   return `<div class="unlock-strip"><span>${STR.unlock_msg}</span><button class="unlock-btn" onclick="${onclickFn}">${STR.unlock_cta}</button></div>`;
 }
 
+/* ============================== Plain-language first page ==============================
+   Michael's ask (2026-10-24): the first page should tell a teacher, in
+   plain language, what we did, what's going well, what isn't, and how
+   SOMA is fixing it — not just hand them a stats table and expect them
+   to interpret it. Built deterministically from the same real numbers
+   the table below it uses (find the best/worst grade×subject reading
+   pair) — never an invented or LLM-generated claim, since this goes to
+   the DEO as an official submission. `rows` is generic so the exact
+   same function serves a school's grades (teacher's copy) and a
+   district's schools (the DEO's copy at the top of a batch report). */
+function computeNarrative(rows) {
+  const valid = rows.filter((r) => r.n > 0);
+  if (!valid.length) return null;
+  const totalN = valid.reduce((a, r) => a + r.n, 0);
+  const points = [];
+  valid.forEach((r) => {
+    points.push({ label: r.label, subject: 'reading', pct: r.readingPct });
+    points.push({ label: r.label, subject: 'arithmetic', pct: r.arithPct });
+  });
+  const strongest = points.reduce((a, b) => (b.pct > a.pct ? b : a));
+  const weakest = points.reduce((a, b) => (b.pct < a.pct ? b : a));
+  return { totalN, strongest, weakest };
+}
+function gradeRowsForSchool(s, year) {
+  return Object.keys(s.grades).sort().map((g) => {
+    const round = bestAvailableRound(s.grades[g], year);
+    const rs = s.grades[g][round];
+    return {
+      label: `${STR.grade} ${g}`, n: rs ? rs.n : 0,
+      readingPct: rs ? pct(rs.reading[3], rs.n) : 0, arithPct: rs ? pct(rs.arithmetic[3], rs.n) : 0,
+    };
+  });
+}
+function schoolRowsForDistrict(schools, year) {
+  return schools.map(([, s]) => {
+    let n = 0, r3 = 0, a3 = 0;
+    Object.values(s.grades).forEach((g) => {
+      const r = bestAvailableRound(g, year);
+      if (g[r]) { n += g[r].n; r3 += g[r].reading[3]; a3 += g[r].arithmetic[3]; }
+    });
+    return { label: s.name, n, readingPct: pct(r3, n), arithPct: pct(a3, n) };
+  });
+}
+function narrativeHtml(title, rows) {
+  const n = computeNarrative(rows);
+  if (!n) return '';
+  const subjName = (s) => (s === 'reading' ? STR.reading : STR.arithmetic).toLowerCase();
+  const did = LANG === 'sw'
+    ? `SOMA ilifanya tathmini ya haraka ya usomaji na hesabu kwa wanafunzi ${n.totalN}, darasa la 1 hadi la 3. Kila mtoto alipimwa mmoja mmoja kwa dakika chache, bila mtihani wa maandishi.`
+    : `SOMA ran a quick one-on-one reading and arithmetic assessment for ${n.totalN} students, grades 1–3. A few minutes per child, no written test.`;
+  const strong = LANG === 'sw'
+    ? `<b>${n.strongest.label}</b> inaongoza kwa ${subjName(n.strongest.subject)} — ${n.strongest.pct}% ya wanafunzi wamefikia kiwango.`
+    : `<b>${n.strongest.label}</b> leads in ${subjName(n.strongest.subject)} — ${n.strongest.pct}% of students are on track.`;
+  const weak = LANG === 'sw'
+    ? `<b>${n.weakest.label}</b> inahitaji msaada zaidi wa ${subjName(n.weakest.subject)} — ni ${n.weakest.pct}% tu waliofikia kiwango.`
+    : `<b>${n.weakest.label}</b> needs the most support in ${subjName(n.weakest.subject)} — only ${n.weakest.pct}% are on track.`;
+  const fix = LANG === 'sw'
+    ? `Kurasa zinazofuata zinaonyesha kila mwanafunzi kwa kundi lake la uwezo na hatua MOJA rahisi ya kuanza nayo — njia ya SOMA ya kufundisha kwa kiwango halisi cha mtoto, si kwa darasa au umri. Tumieni makundi haya KUANZIA LEO.`
+    : `The following pages group every student by ability with ONE simple action to start — SOMA's method of teaching at a child's real level, not by grade or age. Start using these groups TODAY.`;
+  return `<div class="narrative">
+    <div class="narrative-title">${title}</div>
+    <p><b>${STR.nar_what_we_did}:</b> ${did}</p>
+    <p><b>${STR.nar_strengths}:</b> ${strong}</p>
+    <p><b>${STR.nar_issues}:</b> ${weak}</p>
+    <p class="cta-line"><b>${STR.nar_how_fixing}:</b> ${fix}</p>
+  </div>`;
+}
+
+/* ============================== Progress Report ==============================
+   Split out of the Teacher Action Card on 2026-10-08 (kept that one
+   short, daily-teaching-focused) — this is the companion report for
+   tracking change over time: per-grade movement since the last visit,
+   plus the recognition leaderboards already computed server-side in
+   src/snapshot.js. All of it needs 2+ rounds for the SAME children to
+   mean anything — with Pilot still the only round (confirmed 2026-10-24:
+   still 360 records, 1 round), every section here correctly renders an
+   honest "not enough data yet" rather than a misleading empty table. */
+function movementTableHtml(movement, subject) {
+  if (!movement || !movement.n) return `<div class="empty-note">${STR.changed_pending}</div>`;
+  const rows = [['up', STR.moved_up], ['same', STR.stayed], ['down', STR.moved_down]];
+  return `<table><tr><th>${STR[subject]}</th><th>${STR.n_col}</th></tr>` +
+    rows.map(([k, label]) => `<tr><td>${label}</td><td>${movement[k]} / ${movement.n}</td></tr>`).join('') + '</table>';
+}
+function progressSchoolHtml(schoolId, s, snap) {
+  const schoolSnap = snap && snap.by_school ? snap.by_school[schoolId] : null;
+  const grades = Object.keys(s.grades).sort();
+  let html = `<div class="action-card"><div class="ac-hdr"><div class="ac-school">${s.name}</div><div class="ac-sub">${s.ward || ''}</div></div>`;
+  grades.forEach((g) => {
+    const gradeSnap = schoolSnap && schoolSnap.by_grade ? schoolSnap.by_grade[g] : null;
+    html += `<div class="subject-title" style="margin-top:12px">${STR.grade} ${g}</div>
+      <div class="subject-grid">
+        <div class="subject-card"><div class="subject-title">${STR.reading}</div>${movementTableHtml(gradeSnap && gradeSnap.reading, 'reading')}</div>
+        <div class="subject-card"><div class="subject-title">${STR.arithmetic}</div>${movementTableHtml(gradeSnap && gradeSnap.arithmetic, 'arithmetic')}</div>
+      </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+function recognitionValueLabel(entry) {
+  if (entry.rate != null) return `${entry.rate}%`;
+  if (entry.net_rate != null) return `${entry.net_rate >= 0 ? '+' : ''}${entry.net_rate} ${LANG === 'sw' ? 'pointi' : 'pts'}`;
+  if (entry.sustained_rate != null) return `${entry.sustained_rate}%`;
+  if (entry.off_roster_rate != null) return `${entry.off_roster_rate}%`;
+  return '';
+}
+function recognitionHtml(snap) {
+  const rec = snap && snap.recognition;
+  const cats = [
+    ['full_participation', STR.rec_participation], ['no_one_left_behind', STR.rec_no_one_left],
+    ['fastest_growth', STR.rec_fastest_growth], ['consistent_excellence', STR.rec_consistent],
+  ];
+  let html = `<h2>${STR.ct_recognition}</h2>`;
+  cats.forEach(([key, label]) => {
+    const list = rec && rec[key];
+    html += `<div class="rec-block"><div class="rec-label">${label}</div>`;
+    html += list && list.length
+      ? `<ol class="rec-list">${list.slice(0, 3).map((e) => `<li><span>${e.school_name}</span><span class="rec-val">${recognitionValueLabel(e)}</span></li>`).join('')}</ol>`
+      : `<div class="empty-note">${STR.rec_pending}</div>`;
+    html += '</div>';
+  });
+  return html;
+}
+
 async function build() {
   document.documentElement.lang = LANG;
   document.getElementById('tb-back-label').textContent = STR.back;
@@ -375,6 +537,7 @@ async function build() {
     const rosterStudents = await tryFetchRosterSilently(SCHOOL_ID);
     let html = `<h1>${s.name}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${s.ward || ''} · ${year}</div>`;
     if (!rosterStudents) html += unlockStripHtml('unlockAndRebuild()');
+    html += narrativeHtml(s.name, gradeRowsForSchool(s, year));
     html += headteacherSummaryHtml(s, year);
     const grades = Object.keys(s.grades).sort();
     grades.forEach((g, i) => {
@@ -396,6 +559,9 @@ async function build() {
     let adminKey = sessionStorage.getItem(ADMIN_SESSION_KEY);
     let html = `<h1>${STR.title_batch}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${scopeLabel} · ${schools.length} ${LANG === 'sw' ? 'shule' : 'schools'} · ${year}</div>`;
     if (!adminKey) html += unlockStripHtml(`unlockAndRebuildBatch('${schools[0][0]}')`);
+    // District/ward-level narrative — this is the DEO's (or WEO's) own
+    // first page, ahead of any individual school's section below.
+    html += narrativeHtml(`${STR.title_batch} — ${scopeLabel}`, schoolRowsForDistrict(schools, year));
 
     // Fetch every school's roster in parallel rather than one at a time —
     // a 10-school district batch would otherwise serialize 10 round
@@ -420,7 +586,11 @@ async function build() {
         return s.grades[g][r] && s.grades[g][r].n;
       });
       if (!grades.length) return;
-      html += `<div class="${isFirstPage ? '' : 'page-break'}">${headteacherSummaryHtml(s, year)}</div>`;
+      // Each school's section also gets its OWN narrative — this is the
+      // part that gets physically torn out and handed to that school's
+      // headteacher/WEO, so it needs to stand alone, not just rely on
+      // the district-wide one at the top of the whole document.
+      html += `<div class="${isFirstPage ? '' : 'page-break'}">${narrativeHtml(s.name, gradeRowsForSchool(s, year))}${headteacherSummaryHtml(s, year)}</div>`;
       isFirstPage = false;
       grades.forEach((g) => {
         const round = bestAvailableRound(s.grades[g], year);
@@ -429,6 +599,34 @@ async function build() {
       });
     });
     document.getElementById('content').innerHTML = html;
+  } else if (TYPE === 'progress') {
+    document.getElementById('tb-title').textContent = STR.title_progress;
+    const snapRes = await fetch('/api/snapshot');
+    const snap = await snapRes.json().catch(() => null);
+
+    if (SCHOOL_ID) {
+      // Single school — the headteacher/WEO's own copy.
+      const s = Y.schools[SCHOOL_ID];
+      document.getElementById('hsub').textContent = `${STR.title_progress} — ${year}`;
+      if (!s) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
+      let html = `<h1>${s.name}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${s.ward || ''} · ${year}</div>`;
+      html += progressSchoolHtml(SCHOOL_ID, s, snap);
+      document.getElementById('content').innerHTML = html;
+    } else {
+      // District/ward batch — the DEO's (or WEO's) copy.
+      const scopeLabel = STR.batch_label(BATCH_SCOPE === 'ward' ? BATCH_WARD : null);
+      document.getElementById('hsub').textContent = `${STR.title_progress} — ${scopeLabel} — ${year}`;
+      let schools = Object.entries(Y.schools);
+      if (BATCH_SCOPE === 'ward' && BATCH_WARD) schools = schools.filter(([, s]) => s.ward === BATCH_WARD);
+      schools.sort((a, b) => (a[1].ward || '').localeCompare(b[1].ward || '') || a[1].name.localeCompare(b[1].name));
+      if (!schools.length) { document.getElementById('content').innerHTML = `<div>${STR.no_data}</div>`; return; }
+      let html = `<h1>${STR.title_progress}</h1><div style="font-size:11px;color:#9aa4b8;margin-bottom:14px">${scopeLabel} · ${schools.length} ${LANG === 'sw' ? 'shule' : 'schools'} · ${year}</div>`;
+      html += recognitionHtml(snap);
+      schools.forEach(([schoolId, s]) => {
+        html += `<div class="page-break">${progressSchoolHtml(schoolId, s, snap)}</div>`;
+      });
+      document.getElementById('content').innerHTML = html;
+    }
   } else {
     document.getElementById('tb-title').textContent = STR.title_district;
     document.getElementById('hsub').textContent = `${STR.title_district} — ${year}`;
